@@ -2,11 +2,11 @@ import { Routes, Route } from "react-router-dom";
 
 import Login from "@/pages/auth/Login";
 import Home from "@/pages/Public/Home/Home";
+import PageNotFound from "@/pages/Page_Not_Found/Page_Not_Found";
 
 const AppRoutes = () => {
   return (
     <Routes>
-
       {/* Public Pages */}
       <Route path="/" element={<Home />} />
 
@@ -15,15 +15,7 @@ const AppRoutes = () => {
       {/* <Route path="/choose-role" element={<ChooseRole />} /> */}
 
       {/* Fallback */}
-      <Route
-        path="*"
-        element={
-          <div className="flex items-center justify-center h-screen text-xl">
-            Page Not Found
-          </div>
-        }
-      />
-
+      <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
 };

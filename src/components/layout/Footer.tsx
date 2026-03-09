@@ -5,7 +5,7 @@ const Footer = () => {
 
         {/* Logo */}
         <div>
-          <h2 className="text-2xl font-bold text-farmLeaf">Farmzy</h2>
+          <h2 className="text-2xl font-bold text-farmLeaf">FarmzyZY</h2>
           <p className="mt-4 text-sm text-gray-300">
             Farmzy connects farmers and companies through a transparent
             agriculture marketplace.

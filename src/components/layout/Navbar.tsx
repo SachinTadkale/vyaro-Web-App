@@ -44,7 +44,7 @@ const Navbar = () => {
 
         {/* Logo */}
         <a href="#home" className="text-2xl font-bold text-farmGreen">
-          Farmzy
+          FarmZY
         </a>
 
         {/* Desktop Menu */}
@@ -82,12 +82,12 @@ const Navbar = () => {
 
         {/* Buttons */}
         <div className="hidden md:flex items-center space-x-4">
-          <Link
+          {/* <Link
             to="/login"
             className="px-4 py-2 border border-farmGreen text-farmGreen rounded-lg hover:bg-farmGreen hover:text-white transition"
           >
             Login
-          </Link>
+          </Link> */}
 
           <a
             href="#download"
