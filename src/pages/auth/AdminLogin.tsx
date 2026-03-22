@@ -19,59 +19,58 @@ const AdminLogin = () => {
       >
         {/* HEADER */}
         <div className="text-center">
-          <div className="text-farmGreen text-3xl mb-2">
+          <div className="text-green-700 text-3xl mb-2">
             <FontAwesomeIcon icon={faUserShield} />
           </div>
-
           <h2 className="text-xl font-bold">Admin Login</h2>
-
           <p className="text-sm text-gray-500 mt-1">
             Access admin dashboard securely
           </p>
         </div>
 
-        {/* EMAIL */}
-        <div className="flex items-center gap-1 px-2">
+        {/* EMAIL — icon inside, input padded to clear it */}
+        <div className="relative">
           <FontAwesomeIcon
             icon={faEnvelope}
-            className="text-gray-400 text-lg"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none z-10"
           />
-
           <input
             type="email"
             placeholder="Admin email"
-            className="input flex-1"
+            className="w-full border border-gray-300 rounded-lg py-3 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
           />
         </div>
 
-        {/* PASSWORD */}
-        <div className="flex items-center gap-1 px-2">
-          <FontAwesomeIcon icon={faLock} className="text-gray-400 text-lg" />
-
-          <div className="relative flex-1">
-            <input
-              type={showPassword ? "text" : "password"}
-              placeholder="Password"
-              className="input pr-10 w-full"
-            />
-
-            <FontAwesomeIcon
-              icon={showPassword ? faEyeSlash : faEye}
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm cursor-pointer hover:text-farmGreen"
-            />
-          </div>
+        {/* PASSWORD — same pattern as email for consistency */}
+        <div className="relative">
+          <FontAwesomeIcon
+            icon={faLock}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none z-10"
+          />
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="Password"
+            className="w-full border border-gray-300 rounded-lg py-3 pl-10 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
+          />
+          <FontAwesomeIcon
+            icon={showPassword ? faEyeSlash : faEye}
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm cursor-pointer hover:text-green-700"
+          />
         </div>
 
         {/* FORGOT PASSWORD */}
-        <div className="text-right">
+        <div className="text-right -mt-2">
           <span className="text-sm text-gray-500 cursor-pointer hover:underline">
             Forgot Password?
           </span>
         </div>
 
         {/* BUTTON */}
-        <button className="btn-primary transition-all duration-200 active:scale-95 hover:scale-[1.02]">
+        <button
+          type="submit"
+          className="w-full bg-green-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 active:scale-95 hover:scale-[1.02] hover:bg-green-800"
+        >
           Login
         </button>
 
