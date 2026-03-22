@@ -1,17 +1,17 @@
 import { Routes, Route } from "react-router-dom";
-
-import Login from "@/pages/auth/Login";
-import LandingPage from "@/pages/Public/Home/LandingPage";
 import PageNotFound from "@/pages/Page_Not_Found/Page_Not_Found";
+import AuthPage from "@/pages/auth/AuthPage";
+import AdminLogin from "@/pages/auth/AdminLogin";
 
 const AppRoutes = () => {
   return (
     <Routes>
-      {/* Public Pages */}
-      <Route path="/" element={<LandingPage />} />
-
+      {/* Public */}
+      {/* <Route path="/" element={<Home />} /> */}
       {/* Auth */}
-      <Route path="/login" element={<Login />} />
+      <Route path="/login" element={<AuthPage />} />
+      <Route path="/register" element={<AuthPage />} />
+      <Route path="/admin/login" element={<AdminLogin />} />
 
       {/* Fallback */}
       <Route path="*" element={<PageNotFound />} />
