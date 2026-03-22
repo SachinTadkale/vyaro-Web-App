@@ -6,9 +6,29 @@ import {
   faEye,
   faEyeSlash,
 } from "@fortawesome/free-solid-svg-icons";
+import { motion } from "framer-motion";
 
 type Props = {
   switchToRegister: () => void;
+};
+
+const inputClass =
+  "w-full border border-gray-300 rounded-lg py-3 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-green-600";
+
+const iconClass =
+  "absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none z-10";
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: i * 0.1,
+      duration: 0.4,
+      ease: "easeOut" as const,
+    },
+  }),
 };
 
 const LoginForm = ({ switchToRegister }: Props) => {
@@ -19,60 +39,91 @@ const LoginForm = ({ switchToRegister }: Props) => {
       onSubmit={(e) => e.preventDefault()}
       className="w-full max-w-sm flex flex-col justify-center gap-6"
     >
-      <div>
-        <h2 className="text-xl font-bold text-center mb-6">Company Login</h2>
+      <motion.h2
+        className="text-xl font-bold text-center"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+      >
+        Company Login
+      </motion.h2>
 
-        <div className="space-y-5">
-          {/* EMAIL */}
-          <div className="relative">
-            <FontAwesomeIcon
-              icon={faEnvelope}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none z-10"
-            />
-            <input
-              type="email"
-              placeholder="Email address"
-              autoComplete="email"
-              className="w-full border border-gray-300 rounded-lg py-3 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
-            />
-          </div>
+      <div className="space-y-5">
+        {/* EMAIL */}
+        <motion.div
+          className="relative"
+          custom={0}
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+        >
+          <FontAwesomeIcon icon={faEnvelope} className={iconClass} />
+          <input
+            type="email"
+            placeholder="Email address"
+            autoComplete="email"
+            className={inputClass}
+          />
+        </motion.div>
 
-          {/* PASSWORD */}
-          <div className="relative">
-            <FontAwesomeIcon
-              icon={faLock}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none z-10"
-            />
-            <input
-              type={showPassword ? "text" : "password"}
-              placeholder="Password"
-              autoComplete="current-password"
-              className="w-full border border-gray-300 rounded-lg py-3 pl-10 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
-            />
-            <FontAwesomeIcon
-              icon={showPassword ? faEyeSlash : faEye}
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm cursor-pointer hover:text-farmGreen"
-            />
-          </div>
-        </div>
+        {/* PASSWORD */}
+        <motion.div
+          className="relative"
+          custom={1}
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+        >
+          <FontAwesomeIcon icon={faLock} className={iconClass} />
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="Password"
+            autoComplete="current-password"
+            className={`${inputClass} pr-10`}
+          />
+          <FontAwesomeIcon
+            icon={showPassword ? faEyeSlash : faEye}
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm cursor-pointer hover:text-farmGreen"
+          />
+        </motion.div>
       </div>
 
-      <button
+      {/* BUTTON */}
+      <motion.button
         type="submit"
-        className="btn-primary transition-all duration-200 active:scale-95 hover:scale-[1.02]"
+        className="btn-primary"
+        custom={2}
+        variants={fadeUp}
+        initial="hidden"
+        animate="visible"
+        whileTap={{ scale: 0.97 }}
+        whileHover={{ scale: 1.02 }}
       >
         Login
-      </button>
+      </motion.button>
 
       {/* FORGOT PASSWORD */}
-      <div className="text-right">
+      <motion.div
+        className="text-right"
+        custom={3}
+        variants={fadeUp}
+        initial="hidden"
+        animate="visible"
+      >
         <span className="text-sm text-gray-500 cursor-pointer hover:underline">
           Forgot Password?
         </span>
-      </div>
+      </motion.div>
 
-      <p className="text-center text-sm text-gray-500">
+      {/* REGISTER LINK */}
+      <motion.p
+        className="text-center text-sm text-gray-500"
+        custom={4}
+        variants={fadeUp}
+        initial="hidden"
+        animate="visible"
+      >
         Do not have an account?{" "}
         <span
           onClick={switchToRegister}
@@ -80,14 +131,9 @@ const LoginForm = ({ switchToRegister }: Props) => {
         >
           Register here
         </span>
-      </p>
+      </motion.p>
     </form>
   );
 };
 
 export default LoginForm;
-// ```
-
-// **The real fix:** replaced `className="input w-full pl-10"` with full explicit Tailwind styles:
-// ```
-// w-full border border-gray-300 rounded-lg py-3 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-green-600
