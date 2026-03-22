@@ -20,48 +20,43 @@ const LoginForm = ({ switchToRegister }: Props) => {
       className="w-full max-w-sm flex flex-col justify-center gap-6"
     >
       <div>
-        <h2 className="text-xl font-bold text-center mb-6">
-          Company Login
-        </h2>
+        <h2 className="text-xl font-bold text-center mb-6">Company Login</h2>
 
         <div className="space-y-5">
-
           {/* EMAIL */}
-          <div className="relative group">
+          <div className="flex items-center gap-3 px-1">
             <FontAwesomeIcon
               icon={faEnvelope}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm group-focus-within:text-farmGreen"
+              className="text-gray-400 text-lg"
             />
+
             <input
               type="email"
               placeholder="Email address"
-              className="input pl-11"
+              className="input flex-1"
               autoComplete="email"
             />
           </div>
 
           {/* PASSWORD */}
-          <div className="relative group">
-            <FontAwesomeIcon
-              icon={faLock}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm group-focus-within:text-farmGreen"
-            />
+          <div className="flex items-center gap-3 px-1">
+            <FontAwesomeIcon icon={faLock} className="text-gray-400 text-lg" />
 
-            <input
-              type={showPassword ? "text" : "password"}
-              placeholder="Password"
-              className="input pl-11 pr-10"
-              autoComplete="current-password"
-            />
+            <div className="relative flex-1">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                className="input w-full pr-10"
+                autoComplete="current-password"
+              />
 
-            {/* 👁️ TOGGLE */}
-            <FontAwesomeIcon
-              icon={showPassword ? faEyeSlash : faEye}
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm cursor-pointer hover:text-farmGreen"
-            />
+              <FontAwesomeIcon
+                icon={showPassword ? faEyeSlash : faEye}
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm cursor-pointer hover:text-farmGreen"
+              />
+            </div>
           </div>
-
         </div>
       </div>
 
