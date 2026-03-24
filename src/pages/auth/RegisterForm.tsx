@@ -6,6 +6,7 @@ import {
   faLocationDot,
   faEye,
   faEyeSlash,
+  faFileArrowUp,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useState } from "react";
@@ -65,8 +66,7 @@ type Step2Data = z.infer<typeof step2Schema>;
 type Step3Data = z.infer<typeof step3Schema>;
 
 const inputClass =
-  "w-full border border-gray-300 rounded-lg py-3 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-green-600";
-
+  "w-full border border-gray-300 rounded-lg py-3 pl-10 pr-4 text-sm outline-none focus:border-green-600 focus:border-2 bg-white text-gray-900 transition-colors";
 const iconClass =
   "absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none z-10";
 
@@ -98,12 +98,12 @@ const RegisterForm = ({ switchToLogin }: Props) => {
 
   const form1 = useForm<Step1Data>({
     resolver: zodResolver(step1Schema),
-    mode: "onTouched",
+    mode: "onSubmit",
   });
 
   const form2 = useForm<Step2Data>({
     resolver: zodResolver(step2Schema),
-    mode: "onTouched",
+    mode: "onSubmit",
   });
 
   const form3 = useForm<Step3Data>({
@@ -298,70 +298,92 @@ const RegisterForm = ({ switchToLogin }: Props) => {
               </form>
             )}
 
-            {/* STEP 3 */}
-            {step === 3 && (
-              <form
-                onSubmit={form3.handleSubmit(onStep3Submit)}
-                className="space-y-5"
-              >
-                <h2 className="text-xl font-bold text-center">
-                  Upload Documents
-                </h2>
-                <p className="text-sm text-gray-500 text-center -mt-3">
-                  Please upload required documents for verification.
-                </p>
+{/* STEP 3 */}
+{step === 3 && (
+  <form onSubmit={form3.handleSubmit(onStep3Submit)} className="space-y-5">
+    <h2 className="text-xl font-bold text-center">Upload Documents</h2>
+    <p className="text-sm text-gray-500 text-center -mt-3">
+      Please upload required documents for verification.
+    </p>
 
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">
-                      GST Certificate
-                    </label>
-                    <input
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      className="w-full border border-gray-300 rounded-lg py-2 px-3 text-sm mt-1 focus:outline-none focus:ring-2 focus:ring-green-600"
-                      {...form3.register("gstCertificate")}
-                    />
-                    <ErrorMsg
-                      msg={
-                        form3.formState.errors.gstCertificate?.message as string
-                      }
-                    />
-                  </div>
+    <div className="space-y-4">
+      {/* GST Certificate */}
+      <div>
+        <label className="text-sm font-medium text-gray-700 mb-1 block">
+          GST Certificate
+        </label>
+        <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-xl py-5 px-4 cursor-pointer hover:border-green-500 hover:bg-green-50 transition-all duration-200 group">
+          <div className="flex flex-col items-center gap-1 text-center">
+            <FontAwesomeIcon
+              icon={faFileArrowUp}
+              className="text-2xl text-gray-400 group-hover:text-green-500 transition-colors duration-200"
+            />
+            <p className="text-sm text-gray-500 group-hover:text-green-600">
+              {form3.watch("gstCertificate")?.[0]?.name ?? (
+                <>
+                  <span className="font-medium text-green-600">Click to upload</span>{" "}
+                  or drag & drop
+                </>
+              )}
+            </p>
+            <p className="text-xs text-gray-400">PDF, JPG, PNG — max 5MB</p>
+          </div>
+          <input
+            type="file"
+            accept=".pdf,.jpg,.jpeg,.png"
+            className="hidden"
+            {...form3.register("gstCertificate")}
+          />
+        </label>
+        <ErrorMsg msg={form3.formState.errors.gstCertificate?.message as string} />
+      </div>
 
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">
-                      Business License or Registration Document
-                    </label>
-                    <input
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      className="w-full border border-gray-300 rounded-lg py-2 px-3 text-sm mt-1 focus:outline-none focus:ring-2 focus:ring-green-600"
-                      {...form3.register("businessLicense")}
-                    />
-                    <ErrorMsg
-                      msg={
-                        form3.formState.errors.businessLicense
-                          ?.message as string
-                      }
-                    />
-                  </div>
-                </div>
+      {/* Business License */}
+      <div>
+        <label className="text-sm font-medium text-gray-700 mb-1 block">
+          Business License or Registration Document
+        </label>
+        <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-xl py-5 px-4 cursor-pointer hover:border-green-500 hover:bg-green-50 transition-all duration-200 group">
+          <div className="flex flex-col items-center gap-1 text-center">
+            <FontAwesomeIcon
+              icon={faFileArrowUp}
+              className="text-2xl text-gray-400 group-hover:text-green-500 transition-colors duration-200"
+            />
+            <p className="text-sm text-gray-500 group-hover:text-green-600">
+              {form3.watch("businessLicense")?.[0]?.name ?? (
+                <>
+                  <span className="font-medium text-green-600">Click to upload</span>{" "}
+                  or drag & drop
+                </>
+              )}
+            </p>
+            <p className="text-xs text-gray-400">PDF, JPG, PNG — max 5MB</p>
+          </div>
+          <input
+            type="file"
+            accept=".pdf,.jpg,.jpeg,.png"
+            className="hidden"
+            {...form3.register("businessLicense")}
+          />
+        </label>
+        <ErrorMsg msg={form3.formState.errors.businessLicense?.message as string} />
+      </div>
+    </div>
 
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => goBack(2)}
-                    className="w-full border border-gray-300 text-gray-600 rounded-lg py-3 text-sm font-medium hover:bg-gray-50 transition"
-                  >
-                    Back
-                  </button>
-                  <button type="submit" className="btn-primary">
-                    Submit Documents
-                  </button>
-                </div>
-              </form>
-            )}
+    <div className="flex gap-3">
+      <button
+        type="button"
+        onClick={() => goBack(2)}
+        className="w-full border border-gray-300 text-gray-600 rounded-lg py-3 text-sm font-medium hover:bg-gray-50 transition"
+      >
+        Back
+      </button>
+      <button type="submit" className="btn-primary">
+        Submit Documents
+      </button>
+    </div>
+  </form>
+)}
 
             {/* STEP 4 */}
             {step === 4 && (
