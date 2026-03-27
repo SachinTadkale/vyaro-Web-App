@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import LoginForm from "./LoginForm";
-import RegisterForm from "./RegisterForm";
+import LoginForm from "../components/LoginForm";
+import RegisterForm from "../components/RegisterForm";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChartLine,

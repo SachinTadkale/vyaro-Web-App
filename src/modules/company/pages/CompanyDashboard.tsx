@@ -8,11 +8,11 @@ import {
   faSun, faMoon,
 } from "@fortawesome/free-solid-svg-icons";
 import { motion, AnimatePresence } from "framer-motion";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { 
-  fetchProductsAPI, createProductAPI, updateProductAPI, deleteProductAPI, 
-  fetchFarmerListingsAPI, fetchCompanyProfileAPI, fetchCompanyNotificationsAPI 
-} from "@/api/company.api";
+// import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+// import { 
+//   fetchProductsAPI, createProductAPI, updateProductAPI, deleteProductAPI, 
+//   fetchFarmerListingsAPI, fetchCompanyProfileAPI, fetchCompanyNotificationsAPI 
+// } from "@/api/company.api";
 
 // ── Types ──────────────────────────────────────────────────
 export interface Product {
@@ -142,60 +142,20 @@ const CompanyDashboard = () => {
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [search, setSearch]       = useState("");
 
-  const queryClient = useQueryClient();
-
-  // Fetching
-  const { data: productsData, isLoading } = useQuery<Product[]>({ queryKey: ["companyProducts"], queryFn: fetchProductsAPI, retry: 1 });
-  const products = productsData && Array.isArray(productsData) ? productsData : MOCK_PRODUCTS;
-
-  const { data: farmerListingsData } = useQuery<FarmerListing[]>({ queryKey: ["farmerListings"], queryFn: fetchFarmerListingsAPI, retry: 1 });
-  const farmerListings = farmerListingsData && Array.isArray(farmerListingsData) ? farmerListingsData : MOCK_FARMERS;
-
-  const { data: profileData } = useQuery({ queryKey: ["companyProfile"], queryFn: fetchCompanyProfileAPI, retry: 1 });
-  const company = profileData || MOCK_COMPANY;
-
-  const { data: notificationsData } = useQuery<Notification[]>({ queryKey: ["companyNotifications"], queryFn: fetchCompanyNotificationsAPI, retry: 1 });
-  const notifications = notificationsData && Array.isArray(notificationsData) ? notificationsData : MOCK_NOTIFS;
-
-  // Mutations
-  const createMutation = useMutation({
-    mutationFn: createProductAPI,
-    onMutate: async (newProd) => {
-      // Optimistic upate fake ID
-      const fakeObj = { ...newProd, productId: Date.now().toString() };
-      queryClient.setQueryData(["companyProducts"], (old: Product[] | undefined) => [...(old || []), fakeObj]);
-    },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ["companyProducts"] })
-  });
+  const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
+  const [farmerListings] = useState<FarmerListing[]>(MOCK_FARMERS);
+  const [company] = useState(MOCK_COMPANY);
+  const [notifications] = useState<Notification[]>(MOCK_NOTIFS);
   
-  const updateMutation = useMutation({
-    mutationFn: updateProductAPI,
-    onMutate: async ({ id, productData }) => {
-      queryClient.setQueryData(["companyProducts"], (old: Product[] | undefined) => 
-        old ? old.map(p => p.productId === id ? { ...p, ...productData } : p) : old
-      );
-    },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ["companyProducts"] })
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: deleteProductAPI,
-    onMutate: async (id) => {
-      queryClient.setQueryData(["companyProducts"], (old: Product[] | undefined) => 
-        old ? old.filter(p => p.productId !== id) : old
-      );
-    },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ["companyProducts"] })
-  });
-
-  const filtered = products.filter(p => p.productName.toLowerCase().includes(search.toLowerCase()) || p.category.toLowerCase().includes(search.toLowerCase()));
+  const isLoading = false;
+  const productsData = products;
 
   const handleSave = (data: { productName: string; category: string; unit: string }) => {
-    if (editProduct) updateMutation.mutate({ id: editProduct.productId, productData: data });
-    else createMutation.mutate(data);
+    if (editProduct) setProducts(old => old.map(p => p.productId === editProduct.productId ? { ...p, ...data } : p));
+    else setProducts(old => [...old, { productId: Date.now().toString(), ...data }]);
     setEditProduct(null);
   };
-  const handleDelete = (id: string) => deleteMutation.mutate(id);
+  const handleDelete = (id: string) => setProducts(old => old.filter(p => p.productId !== id));
   const openEdit = (p: Product) => { setEditProduct(p); setModalOpen(true); };
 
   // Theme tokens
