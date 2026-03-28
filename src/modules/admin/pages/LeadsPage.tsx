@@ -1,33 +1,40 @@
 import { useEffect, useState } from "react";
-import type { Lead, LeadRole } from "../types/lead.types";
-import { getLeadsAPI, deleteLeadAPI, createLeadAPI } from "@/api/leads.api";
+import axios from "axios";
+import { getLeads, deleteLead, createLead } from "@/api/leads.api";
+import type { Lead } from "@/api/leads.api";
 
 const LeadsPage = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // ✅ FIXED TYPE
-  const [form, setForm] = useState<{
-    email: string;
-    role: LeadRole;
-    name: string;
-  }>({
-    email: "",
-    role: "FARMER",
-    name: "",
-  });
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newLead, setNewLead] = useState({ name: "", email: "", role: "FARMER" as "FARMER" | "COMPANY" });
+  const [creating, setCreating] = useState(false);
 
-  const [showModal, setShowModal] = useState(false);
-
-  // 🔥 FETCH
+  // 🔥 FETCH LEADS
   const fetchLeads = async () => {
     try {
       setLoading(true);
-      const data = await getLeadsAPI();
+      setError(null);
+
+      const data = await getLeads();
       setLeads(data);
-    } catch (err) {
-      console.error(err);
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        const message = err.response?.data?.message;
+
+        // ✅ Handle empty case (NOT error)
+        if (message === "No leads found") {
+          setLeads([]);
+          setError(null);
+        } else {
+          setError(message || "API Error");
+        }
+      } else {
+        setError("Something went wrong");
+      }
     } finally {
       setLoading(false);
     }
@@ -37,179 +44,156 @@ const LeadsPage = () => {
     fetchLeads();
   }, []);
 
-  // 🔥 DELETE
+  // 🔥 DELETE LEAD
   const handleDelete = async (id: string) => {
-    const confirmDelete = confirm("Delete this lead?");
-    if (!confirmDelete) return;
+    if (!window.confirm("Are you sure you want to delete this lead?")) return;
 
     try {
-      await deleteLeadAPI(id);
-      fetchLeads();
-    } catch (err) {
-      console.error(err);
+      await deleteLead(id);
+
+      // ✅ Optimized (no refetch)
+      setLeads((prev) => prev.filter((lead) => lead.id !== id));
+
+      alert("Lead deleted successfully");
+    } catch {
+      alert("Failed to delete lead");
     }
   };
 
-  // 🔥 CREATE
-  const handleCreate = async () => {
+  // 🔥 ADD LEAD
+  const handleAddLead = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newLead.email) return alert("Email is required");
+
     try {
-      await createLeadAPI(form);
-      setShowModal(false);
-      setForm({ email: "", role: "FARMER", name: "" });
-      fetchLeads();
-    } catch (err) {
-      console.error(err);
+      setCreating(true);
+      const res = await createLead(newLead);
+      const addedLead = res.data.data;
+      
+      // Update state without refetching
+      setLeads((prev) => [addedLead, ...prev]);
+      
+      setIsModalOpen(false);
+      setNewLead({ name: "", email: "", role: "FARMER" });
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        alert(err.response?.data?.message || "Failed to add lead");
+      } else {
+        alert("Something went wrong");
+      }
+    } finally {
+      setCreating(false);
     }
   };
-
-  // 🔍 FILTER
-  const filteredLeads = leads.filter(
-    (l) =>
-      l.email.toLowerCase().includes(search.toLowerCase()) ||
-      (l.name || "").toLowerCase().includes(search.toLowerCase()),
-  );
 
   return (
-    <div className="space-y-6">
-      {/* HEADER */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-lg font-black text-white">Leads</h1>
-          <p className="text-sm text-white/40">Manage all leads</p>
-        </div>
-
+    <div className="p-6 relative">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-white">Leads Management</h1>
         <button
-          onClick={() => setShowModal(true)}
-          className="bg-green-500 text-black px-4 py-2 rounded-xl text-sm font-bold"
+          onClick={() => setIsModalOpen(true)}
+          className="bg-[#00DDA3] text-black px-4 py-2 rounded-lg font-semibold hover:bg-[#00c490] transition"
         >
           + Add Lead
         </button>
       </div>
 
-      {/* SEARCH */}
-      <input
-        placeholder="Search..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="w-full px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white"
-      />
+      {/* 🔄 Loading */}
+      {loading && <p>Loading leads...</p>}
 
-      {/* LOADING */}
-      {loading && (
-        <div className="text-white/40 text-center py-10">Loading leads...</div>
-      )}
+      {/* ❌ Error */}
+      {error && <p className="text-red-500">{error}</p>}
 
-      {/* EMPTY */}
-      {!loading && filteredLeads.length === 0 && (
-        <div className="text-white/40 text-center py-10">No leads found</div>
-      )}
-
-      {/* TABLE */}
-      {!loading && filteredLeads.length > 0 && (
-        <div className="rounded-2xl border border-white/10 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-white/5 text-white/50 text-xs">
-              <tr>
-                <th className="px-5 py-3 text-left">Name</th>
-                <th className="px-5 py-3 text-left">Email</th>
-                <th className="px-5 py-3 text-left">Role</th>
-                <th className="px-5 py-3 text-left">Created</th>
-                <th className="px-5 py-3 text-left">Action</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {filteredLeads.map((l) => (
-                <tr
-                  key={l.id}
-                  className="border-t border-white/5 hover:bg-white/5"
-                >
-                  <td className="px-5 py-4 text-white font-bold">
-                    {l.name || "-"}
-                  </td>
-
-                  <td className="px-5 py-4 text-white/70">{l.email}</td>
-
-                  <td className="px-5 py-4">
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${
-                        l.role === "FARMER"
-                          ? "bg-green-500/20 text-green-400"
-                          : "bg-blue-500/20 text-blue-400"
-                      }`}
-                    >
-                      {l.role}
-                    </span>
-                  </td>
-
-                  <td className="px-5 py-4 text-xs text-white/40">
-                    {new Date(l.createdAt).toLocaleDateString()}
-                  </td>
-
-                  <td className="px-5 py-4">
-                    <button
-                      onClick={() => handleDelete(l.id)}
-                      className="text-red-400 text-xs font-bold"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* ✅ Empty State (Better UI) */}
+      {!loading && !error && leads.length === 0 && (
+        <div className="text-center mt-10 text-gray-400">
+          <p className="text-lg font-semibold">No leads found</p>
+          <p className="text-sm">
+            Leads will appear here once users show interest.
+          </p>
         </div>
       )}
 
-      {/* MODAL */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
-          <div className="bg-[#0a1428] p-6 rounded-2xl w-80 space-y-4">
-            <h2 className="text-white font-bold">Add Lead</h2>
+      {/* ✅ Leads List */}
+      {!loading &&
+        !error &&
+        leads.map((lead) => (
+          <div
+            key={lead.id}
+            className="border p-4 rounded-lg mb-3 shadow-sm bg-white"
+          >
+            <p className="font-semibold">{lead.name || "No Name"}</p>
+            <p className="text-sm text-gray-600">{lead.email}</p>
+            <p className="text-xs text-gray-500">{lead.role}</p>
 
-            <input
-              placeholder="Email"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white"
-            />
-
-            <select
-              value={form.role}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  role: e.target.value as LeadRole,
-                })
-              }
-              className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white"
+            <button
+              onClick={() => handleDelete(lead.id)}
+              className="mt-2 text-red-500 text-sm"
             >
-              <option value="FARMER">Farmer</option>
-              <option value="COMPANY">Company</option>
-            </select>
+              Delete
+            </button>
+          </div>
+        ))}
 
-            <input
-              placeholder="Name"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white"
-            />
+      {/* ✅ Add Lead Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-[#1A1F2B] text-white p-6 rounded-lg shadow-lg w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Add New Lead</h2>
+            <form onSubmit={handleAddLead} className="flex flex-col gap-4">
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Name (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="Enter name"
+                  value={newLead.name}
+                  onChange={(e) => setNewLead({ ...newLead, name: e.target.value })}
+                  className="w-full bg-[#11151C] border border-gray-700 rounded p-2 focus:outline-none focus:border-[#00DDA3]"
+                />
+              </div>
 
-            <div className="flex gap-2">
-              <button
-                onClick={handleCreate}
-                className="flex-1 bg-green-500 text-black py-2 rounded-xl font-bold"
-              >
-                Add
-              </button>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Email <span className="text-red-500">*</span></label>
+                <input
+                  type="email"
+                  placeholder="Enter email address"
+                  required
+                  value={newLead.email}
+                  onChange={(e) => setNewLead({ ...newLead, email: e.target.value })}
+                  className="w-full bg-[#11151C] border border-gray-700 rounded p-2 focus:outline-none focus:border-[#00DDA3]"
+                />
+              </div>
 
-              <button
-                onClick={() => setShowModal(false)}
-                className="flex-1 bg-white/10 text-white py-2 rounded-xl"
-              >
-                Cancel
-              </button>
-            </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Role <span className="text-red-500">*</span></label>
+                <select
+                  value={newLead.role}
+                  onChange={(e) => setNewLead({ ...newLead, role: e.target.value as "FARMER" | "COMPANY" })}
+                  className="w-full bg-[#11151C] border border-gray-700 rounded p-2 focus:outline-none focus:border-[#00DDA3]"
+                >
+                  <option value="FARMER">Farmer</option>
+                  <option value="COMPANY">Company</option>
+                </select>
+              </div>
+
+              <div className="flex gap-3 justify-end mt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 bg-gray-600 rounded-lg hover:bg-gray-700 transition"
+                  disabled={creating}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={creating}
+                  className="px-4 py-2 bg-[#00DDA3] text-black font-semibold rounded-lg hover:bg-[#00c490] transition disabled:opacity-50"
+                >
+                  {creating ? "Saving..." : "Save Lead"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

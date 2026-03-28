@@ -1,22 +1,29 @@
 import axios from "./axios";
 
-export type LeadRole = "FARMER" | "COMPANY";
+export interface Lead {
+  id: string;
+  email: string;
+  role: "FARMER" | "COMPANY";
+  name?: string | null;
+  createdAt: string;
+}
 
-export const getLeadsAPI = async () => {
+// 🔥 GET ALL LEADS
+export const getLeads = async (): Promise<Lead[]> => {
   const res = await axios.get("/api/leads/getLeads");
   return res.data.data;
 };
 
-export const deleteLeadAPI = async (id: string) => {
-  const res = await axios.delete(`/api/leads/deleteLead/${id}`);
-  return res.data;
+// 🔥 DELETE LEAD
+export const deleteLead = async (id: string): Promise<void> => {
+  await axios.delete(`/api/leads/deleteLead/${id}`);
 };
 
-export const createLeadAPI = async (data: {
+// 🔥 OPTIONAL CREATE
+export const createLead = async (data: {
   email: string;
-  role: LeadRole;
+  role: "FARMER" | "COMPANY";
   name?: string;
 }) => {
-  const res = await axios.post("/api/leads/addLead", data);
-  return res.data;
+  return axios.post("/api/leads/addLead", data);
 };
