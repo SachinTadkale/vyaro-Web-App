@@ -18,7 +18,6 @@ const AdminTopbar = ({ dark }: Props) => {
     >
       {/* LEFT: Title + Search */}
       <div className="flex items-center gap-4 w-full max-w-xl">
-        
         {/* Title */}
         <h1
           className={`text-base font-black ${
@@ -51,7 +50,6 @@ const AdminTopbar = ({ dark }: Props) => {
 
       {/* RIGHT: Icons */}
       <div className="flex items-center gap-4">
-        
         {/* Notifications */}
         <button
           className={`relative w-9 h-9 rounded-xl flex items-center justify-center ${
