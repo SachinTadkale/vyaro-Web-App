@@ -9,6 +9,7 @@ import AdminLayout from "@/layouts/AdminLayout";
 import KycPage from "@/modules/admin/pages/KycPage";
 import UsersPage from "@/modules/admin/pages/UsersPage";
 import CompaniesPage from "@/modules/admin/pages/CompaniesPage";
+import LeadsPage from "@/modules/admin/pages/LeadsPage";
 
 const AppRoutes = () => {
   return (
@@ -27,6 +28,7 @@ const AppRoutes = () => {
         <Route path="kyc" element={<KycPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="companies" element={<CompaniesPage />} />
+        <Route path="leads" element={<LeadsPage />} />
       </Route>
 
       <Route path="/company/dashboard" element={<CompanyDashboard />} />

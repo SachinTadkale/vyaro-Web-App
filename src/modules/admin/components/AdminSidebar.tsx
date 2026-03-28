@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+
 import {
   faChartLine,
   faUsers,
@@ -8,6 +9,7 @@ import {
   faRightFromBracket,
   faSun,
   faMoon,
+  faSeedling,
 } from "@fortawesome/free-solid-svg-icons";
 
 type Props = {
@@ -28,7 +30,7 @@ const AdminSidebar = ({ dark, setDark }: Props) => {
       icon: faFileCircleCheck,
     },
     {
-      name: "Users",
+      name: "Farmers",
       path: "/admin/users",
       icon: faUsers,
     },
@@ -36,6 +38,11 @@ const AdminSidebar = ({ dark, setDark }: Props) => {
       name: "Companies",
       path: "/admin/companies",
       icon: faBuilding,
+    },
+    {
+      name: "Leads", // ✅ NEW
+      path: "/admin/leads",
+      icon: faSeedling,
     },
   ];
 
@@ -58,9 +65,7 @@ const AdminSidebar = ({ dark, setDark }: Props) => {
         <button
           onClick={() => setDark(!dark)}
           className={`w-7 h-7 rounded-lg flex items-center justify-center ${
-            dark
-              ? "bg-white/10 text-white/60"
-              : "bg-gray-100 text-gray-600"
+            dark ? "bg-white/10 text-white/60" : "bg-gray-100 text-gray-600"
           }`}
         >
           <FontAwesomeIcon icon={dark ? faSun : faMoon} />
@@ -82,8 +87,8 @@ const AdminSidebar = ({ dark, setDark }: Props) => {
                 isActive
                   ? "bg-green-500/15 text-green-400"
                   : dark
-                  ? "text-white/50 hover:bg-white/5 hover:text-white"
-                  : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+                    ? "text-white/50 hover:bg-white/5 hover:text-white"
+                    : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
               }`
             }
           >

@@ -9,7 +9,7 @@ type Props = {
 
 const KycCard = ({ user, onApprove, onReject, onBlock }: Props) => {
   return (
-    <div className="rounded-2xl border border-white/10 p-4 bg-white/5">
+    <div className="rounded-2xl border border-white/10 p-4 bg-white/[0.04] backdrop-blur-sm hover:bg-white/[0.07] hover:scale-[1.01] transition-all duration-300">
       <p className="text-white font-bold">{user.name}</p>
       <p className="text-xs text-white/40 mb-2">{user.email}</p>
 
@@ -22,7 +22,10 @@ const KycCard = ({ user, onApprove, onReject, onBlock }: Props) => {
         <button onClick={onApprove} className="text-green-400 text-xs">
           Approve
         </button>
-        <button onClick={onReject} className="text-red-400 text-xs">
+        <button
+          onClick={onReject}
+          className="text-red-400 text-xs font-bold hover:text-red-300 transition"
+        >
           Reject
         </button>
         <button onClick={onBlock} className="text-orange-400 text-xs">
