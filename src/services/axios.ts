@@ -24,9 +24,13 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Clear token automatically on unauthorized
-      useAuthStore.getState().logout();
-      window.location.href = "/login";
+      const isAuthRequest = error.config?.url?.includes('login') || error.config?.url?.includes('register');
+      
+      if (!isAuthRequest && window.location.pathname !== "/login") {
+        // Clear token automatically on unauthorized
+        useAuthStore.getState().logout();
+        window.location.href = "/login";
+      }
     }
     return Promise.reject(error);
   }
