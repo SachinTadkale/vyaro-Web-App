@@ -58,7 +58,9 @@ export interface FarmerListing {
   location: string;
   produce: string;
   qty: string;
+  minOrder: string;
   price: string;
+  createdAt: string;
   verified: boolean;
 }
 
@@ -146,11 +148,47 @@ const ProductModal = ({
   );
 };
 
+// ── ProcureModal ────────────────────────────────────────────
+const ProcureModal = ({
+  listing,
+  onClose,
+}: {
+  listing: FarmerListing | null;
+  onClose: () => void;
+}) => {
+  if (!listing) return null;
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] px-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-card border border-border rounded-2xl p-6 w-full max-w-md shadow-2xl">
+        <h3 className="text-lg font-black text-foreground mb-1">Procure Produce</h3>
+        <p className="text-xs text-muted-foreground mb-5">Review details before initiating procurement.</p>
+        
+        <div className="bg-muted/20 border border-border/50 rounded-xl p-4 space-y-3 mb-6">
+          <div className="flex justify-between items-center"><span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Produce</span><span className="text-sm font-black text-primary">{listing.produce}</span></div>
+          <div className="flex justify-between items-center"><span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Seller</span><span className="text-sm font-bold text-foreground">{listing.farmer}</span></div>
+          <div className="flex justify-between items-center"><span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Location</span><span className="text-xs font-medium text-muted-foreground">{listing.location}</span></div>
+          <hr className="border-border/50 my-2" />
+          <div className="flex justify-between items-center"><span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Available Qty</span><span className="text-sm font-black text-foreground">{listing.qty}</span></div>
+          <div className="flex justify-between items-center"><span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Min Order</span><span className="text-sm font-bold text-amber-500">{listing.minOrder}</span></div>
+          <div className="flex justify-between items-center"><span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Price</span><span className="text-sm font-black text-green-500">{listing.price}</span></div>
+          <div className="flex justify-between items-center"><span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Listed On</span><span className="text-xs font-medium text-muted-foreground">{listing.createdAt}</span></div>
+        </div>
+        
+        <div className="flex gap-2.5">
+          <button onClick={onClose} className="flex-1 rounded-xl py-2.5 text-sm font-semibold border border-border text-muted-foreground hover:bg-muted transition-colors">Cancel</button>
+          <button onClick={() => { alert("Procurement payment gateway and flow is under development. Connecting to farmer..."); onClose(); }} className="flex-1 bg-primary text-primary-foreground font-bold rounded-xl py-2.5 text-sm hover:bg-primary/90 transition-colors">Confirm Order</button>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
 // ── Main Component ──────────────────────────────────────────
 const CompanyDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
+  const [procureListing, setProcureListing] = useState<FarmerListing | null>(null);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [search, setSearch] = useState("");
 
@@ -179,15 +217,21 @@ const CompanyDashboard = () => {
   const [marketplaceSearch, setMarketplaceSearch] = useState("");
 
   const farmerListings: FarmerListing[] = farmerListingsData?.data 
-    ? farmerListingsData.data.map((listing: any) => ({
-        id: listing.id,
-        farmer: listing.seller?.name || "Unknown Farmer",
-        location: [listing.location?.district, listing.location?.state].filter(Boolean).join(", ") || "Unknown",
-        produce: listing.product?.name || "Unknown Produce",
-        qty: `${listing.quantity} ${listing.product?.unit || ""}`.trim(),
-        price: `₹${listing.price}/${listing.product?.unit || "unit"}`,
-        verified: true,
-      }))
+    ? farmerListingsData.data.map((listing: any) => {
+        const pUnit = listing.product?.unit || "";
+        const startsWithNum = /^\d/.test(pUnit);
+        return {
+          id: listing.id,
+          farmer: listing.seller?.name || "Unknown Farmer",
+          location: [listing.location?.district, listing.location?.state].filter(Boolean).join(", ") || "Unknown",
+          produce: listing.product?.name || "Unknown Produce",
+          qty: (startsWithNum ? `${listing.quantity} x ${pUnit}` : `${listing.quantity} ${pUnit}`).trim(),
+          minOrder: listing.minOrder ? (startsWithNum ? `${listing.minOrder} x ${pUnit}` : `${listing.minOrder} ${pUnit}`).trim() : "Flexible",
+          price: `₹${listing.price} / ${pUnit || "unit"}`,
+          createdAt: new Date(listing.createdAt || new Date()).toLocaleDateString(),
+          verified: true,
+        };
+      })
     : []; // No more fallback to MOCK_FARMERS
 
   const filteredFarmerListings = farmerListings.filter(fl => {
@@ -340,18 +384,20 @@ const CompanyDashboard = () => {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/30">
-                    <TableHead className="text-xs uppercase font-black tracking-widest">Produce</TableHead>
-                    <TableHead className="text-xs uppercase font-black tracking-widest">Farmer</TableHead>
-                    <TableHead className="text-xs uppercase font-black tracking-widest">Location</TableHead>
-                    <TableHead className="text-xs uppercase font-black tracking-widest">Quantity</TableHead>
-                    <TableHead className="text-xs uppercase font-black tracking-widest">Price</TableHead>
-                    <TableHead className="text-right text-xs uppercase font-black tracking-widest">Actions</TableHead>
+                    <TableHead className="text-left px-4 text-xs uppercase font-black tracking-widest">Produce</TableHead>
+                    <TableHead className="text-left px-4 text-xs uppercase font-black tracking-widest">Farmer</TableHead>
+                    <TableHead className="text-left px-4 text-xs uppercase font-black tracking-widest">Location</TableHead>
+                    <TableHead className="text-center px-4 text-xs uppercase font-black tracking-widest">Available qty</TableHead>
+                    <TableHead className="text-center px-4 text-xs uppercase font-black tracking-widest">Min Order</TableHead>
+                    <TableHead className="text-center px-4 text-xs uppercase font-black tracking-widest">Price</TableHead>
+                    <TableHead className="text-center px-4 text-xs uppercase font-black tracking-widest">Listed On</TableHead>
+                    <TableHead className="text-center px-4 text-xs uppercase font-black tracking-widest">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isErrorListings ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="py-8 text-center text-destructive font-bold break-words px-4">
+                      <TableCell colSpan={8} className="py-8 text-center text-destructive font-bold break-words px-4">
                         <AlertTriangle size={24} className="mx-auto mb-3 text-destructive/80" />
                         We encountered an error loading the marketplace data.<br/>
                         <span className="text-xs text-muted-foreground font-normal">{(errorListings as any)?.response?.data?.message || errorListings?.message || "Please check your network connection and try again."}</span>
@@ -359,33 +405,37 @@ const CompanyDashboard = () => {
                     </TableRow>
                   ) : isLoadingListings ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">Loading marketplace listings...</TableCell>
+                      <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">Loading marketplace listings...</TableCell>
                     </TableRow>
                   ) : filteredFarmerListings.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">No listings found.</TableCell>
+                      <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">No listings found.</TableCell>
                     </TableRow>
                   ) : filteredFarmerListings.map(fl => (
                     <TableRow key={fl.id} className="group hover:bg-muted/50">
-                      <TableCell className="py-3">
+                      <TableCell className="py-4 px-4 text-left">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary"><Leaf size={14} /></div>
+                          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary flex-shrink-0"><Leaf size={16} /></div>
                           <div className="flex flex-col">
-                            <span className="text-sm font-bold">{fl.produce}</span>
-                            {fl.verified && <span className="text-[9px] font-black text-primary uppercase italic">Verified Farmer</span>}
+                            <span className="text-[13px] font-black text-foreground">{fl.produce}</span>
+                            {fl.verified && <span className="text-[9px] font-black text-primary uppercase italic tracking-widest mt-0.5">Verified Farmer</span>}
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="py-3 text-sm font-medium">{fl.farmer}</TableCell>
-                      <TableCell className="py-3 text-xs text-muted-foreground">{fl.location}</TableCell>
-                      <TableCell className="py-3 text-xs font-bold">{fl.qty}</TableCell>
-                      <TableCell className="py-3 text-sm font-black text-primary">{fl.price}</TableCell>
-                      <TableCell className="py-3 text-right">
+                      <TableCell className="py-4 px-4 text-left text-[13px] font-bold text-foreground/80">{fl.farmer}</TableCell>
+                      <TableCell className="py-4 px-4 text-left text-xs text-muted-foreground leading-tight max-w-[150px] truncate">{fl.location}</TableCell>
+                      <TableCell className="py-4 px-4 text-center text-sm font-black text-foreground">{fl.qty}</TableCell>
+                      <TableCell className="py-4 px-4 text-center">
+                        <span className="text-[11px] font-bold text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-md">{fl.minOrder}</span>
+                      </TableCell>
+                      <TableCell className="py-4 px-4 text-center text-[15px] font-black text-primary tracking-tight">{fl.price}</TableCell>
+                      <TableCell className="py-4 px-4 text-center text-[11px] text-muted-foreground font-medium">{fl.createdAt}</TableCell>
+                      <TableCell className="py-4 px-4 text-center">
                         <TooltipProvider delayDuration={200}>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <button className="bg-primary/10 text-primary p-2 rounded-md hover:bg-primary hover:text-primary-foreground transition-all">
-                                <ShoppingCart size={15} />
+                              <button onClick={() => setProcureListing(fl)} className="bg-primary/10 text-primary p-2.5 rounded-lg hover:bg-primary hover:text-primary-foreground transition-all mx-auto flex">
+                                <ShoppingCart size={16} />
                               </button>
                             </TooltipTrigger>
                             <TooltipContent>Procure Now</TooltipContent>
@@ -495,6 +545,7 @@ const CompanyDashboard = () => {
       </AnimatePresence>
 
       <ProductModal open={modalOpen} onClose={() => { setModalOpen(false); setEditProduct(null); }} onSave={handleSave} initial={editProduct} />
+      <ProcureModal listing={procureListing} onClose={() => setProcureListing(null)} />
     </div>
   );
 };
