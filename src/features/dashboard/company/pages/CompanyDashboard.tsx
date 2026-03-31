@@ -1,5 +1,8 @@
-import { useState} from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { fetchFarmerListingsAPI } from "@/services/company.api";
+import { useAuthStore } from "@/store/useAuthStore";
 import {
   Search,
   CheckCircle,
@@ -152,7 +155,46 @@ const CompanyDashboard = () => {
   const [search, setSearch] = useState("");
 
   const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
-  const [farmerListings] = useState<FarmerListing[]>(MOCK_FARMERS);
+  
+  const tabFromPath = location.pathname.split("/").pop();
+  const tab: Tab = (["marketplace", "products", "notifications", "profile"] as Tab[]).includes(tabFromPath as Tab) ? (tabFromPath as Tab) : "overview";
+
+  const { data: farmerListingsData, isLoading: isLoadingListings, isError: isErrorListings, error: errorListings } = useQuery({
+    queryKey: ["marketplaceListings"],
+    queryFn: fetchFarmerListingsAPI,
+    enabled: tab === "marketplace" || tab === "overview",
+  });
+
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+
+  useEffect(() => {
+    if (tab === "marketplace" && !isAuthenticated()) {
+      navigate("/login");
+    }
+    if (isErrorListings && (errorListings as any)?.response?.status === 401) {
+      navigate("/login");
+    }
+  }, [tab, isAuthenticated, isErrorListings, errorListings, navigate]);
+
+  const [marketplaceSearch, setMarketplaceSearch] = useState("");
+
+  const farmerListings: FarmerListing[] = farmerListingsData?.data 
+    ? farmerListingsData.data.map((listing: any) => ({
+        id: listing.id,
+        farmer: listing.seller?.name || "Unknown Farmer",
+        location: [listing.location?.district, listing.location?.state].filter(Boolean).join(", ") || "Unknown",
+        produce: listing.product?.name || "Unknown Produce",
+        qty: `${listing.quantity} ${listing.product?.unit || ""}`.trim(),
+        price: `₹${listing.price}/${listing.product?.unit || "unit"}`,
+        verified: true,
+      }))
+    : []; // No more fallback to MOCK_FARMERS
+
+  const filteredFarmerListings = farmerListings.filter(fl => {
+    const q = marketplaceSearch.toLowerCase();
+    return fl.produce.toLowerCase().includes(q) || fl.farmer.toLowerCase().includes(q) || fl.location.toLowerCase().includes(q);
+  });
+
   const company = MOCK_COMPANY;
   const notifications = MOCK_NOTIFS;
 
@@ -168,8 +210,6 @@ const CompanyDashboard = () => {
   const handleDelete = (id: string) => setProducts(old => old.filter(p => p.productId !== id));
   const openEdit = (p: Product) => { setEditProduct(p); setModalOpen(true); };
 
-  const tabFromPath = location.pathname.split("/").pop();
-  const tab: Tab = (["marketplace", "products", "notifications", "profile"] as Tab[]).includes(tabFromPath as Tab) ? (tabFromPath as Tab) : "overview";
 
   const goToTab = (nextTab: Tab) => navigate(`/dashboard/company/${nextTab}`);
 
@@ -294,7 +334,7 @@ const CompanyDashboard = () => {
           <motion.div key="marketplace" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-              <input className="w-full bg-card border border-border pl-12 pr-4 py-3 rounded-2xl text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary shadow-sm" placeholder="Search farmers, produce, locations..." />
+              <input className="w-full bg-card border border-border pl-12 pr-4 py-3 rounded-2xl text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary shadow-sm" value={marketplaceSearch} onChange={(e) => setMarketplaceSearch(e.target.value)} placeholder="Search farmers, produce, locations..." />
             </div>
             <div className="dashboard-card overflow-hidden">
               <Table>
@@ -309,7 +349,23 @@ const CompanyDashboard = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {farmerListings.map(fl => (
+                  {isErrorListings ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="py-8 text-center text-destructive font-bold break-words px-4">
+                        <AlertTriangle size={24} className="mx-auto mb-3 text-destructive/80" />
+                        We encountered an error loading the marketplace data.<br/>
+                        <span className="text-xs text-muted-foreground font-normal">{(errorListings as any)?.response?.data?.message || errorListings?.message || "Please check your network connection and try again."}</span>
+                      </TableCell>
+                    </TableRow>
+                  ) : isLoadingListings ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">Loading marketplace listings...</TableCell>
+                    </TableRow>
+                  ) : filteredFarmerListings.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">No listings found.</TableCell>
+                    </TableRow>
+                  ) : filteredFarmerListings.map(fl => (
                     <TableRow key={fl.id} className="group hover:bg-muted/50">
                       <TableCell className="py-3">
                         <div className="flex items-center gap-3">

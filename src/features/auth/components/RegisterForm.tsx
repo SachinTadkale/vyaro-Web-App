@@ -14,6 +14,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion, AnimatePresence } from "framer-motion";
+import { useMutation } from "@tanstack/react-query";
+import { registerCompanyAPI, uploadCompanyDocsAPI } from "@/services/company-auth.api";
 
 type Props = {
   switchToLogin: () => void;
@@ -95,6 +97,17 @@ const RegisterForm = ({ switchToLogin }: Props) => {
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState(1); // 1 = forward, -1 = back
   const [showPassword, setShowPassword] = useState(false);
+  const [registerError, setRegisterError] = useState("");
+
+  const { mutateAsync: registerCompany, isPending: isRegistering } = useMutation({
+    mutationFn: registerCompanyAPI,
+  });
+
+  const { mutateAsync: uploadDocs, isPending: isUploading } = useMutation({
+    mutationFn: uploadCompanyDocsAPI,
+  });
+
+  const isPending = isRegistering || isUploading;
 
   const form1 = useForm<Step1Data>({
     resolver: zodResolver(step1Schema),
@@ -122,13 +135,46 @@ const RegisterForm = ({ switchToLogin }: Props) => {
 
   const onStep1Submit = () => goNext(2);
   const onStep2Submit = () => goNext(3);
-  const onStep3Submit = (data: Step3Data) => {
-    console.log("All steps complete:", {
+  const onStep3Submit = async (data: Step3Data) => {
+    setRegisterError("");
+    const allData = {
       ...form1.getValues(),
       ...form2.getValues(),
-      ...data,
-    });
-    goNext(4);
+    };
+
+    const payload = {
+      companyName: allData.companyName,
+      registrationNo: allData.registrationNumber,
+      hqLocation: allData.location,
+      gstNumber: allData.gstNumber,
+      email: allData.email,
+      password: allData.password,
+    };
+
+    try {
+      // 1. Register company
+      const regResponse = await registerCompany(payload);
+      if (regResponse.success && regResponse.data.companyId) {
+        // 2. Upload documents
+        const formData = new FormData();
+        formData.append("companyId", regResponse.data.companyId);
+        formData.append("gst", data.gstCertificate[0]);
+        formData.append("license", data.businessLicense[0]);
+
+        await uploadDocs(formData);
+        
+        // 3. Move to Step 4 on total success
+        goNext(4);
+      }
+    } catch (error: any) {
+      let msg = error.response?.data?.message || error.message || "Failed to register. Please try again.";
+      if (typeof msg === "string" && (msg.includes("prisma") || msg.toLowerCase().includes("database"))) {
+        msg = "Unable to connect to the database server. Please try again later.";
+      } else if (typeof msg === "string" && msg.length > 120) {
+        msg = "An unexpected server error occurred. Please try again.";
+      }
+      setRegisterError(msg);
+    }
   };
 
   return (
@@ -176,6 +222,7 @@ const RegisterForm = ({ switchToLogin }: Props) => {
                         className={iconClass}
                       />
                       <input
+                        id="companyName"
                         placeholder="Company name"
                         className={inputClass}
                         autoComplete="organization"
@@ -194,6 +241,7 @@ const RegisterForm = ({ switchToLogin }: Props) => {
                         className={iconClass}
                       />
                       <input
+                        id="email"
                         type="email"
                         placeholder="Email address"
                         className={inputClass}
@@ -208,6 +256,7 @@ const RegisterForm = ({ switchToLogin }: Props) => {
                     <div className="relative">
                       <FontAwesomeIcon icon={faLock} className={iconClass} />
                       <input
+                        id="password"
                         type={showPassword ? "text" : "password"}
                         placeholder="Password"
                         className={`${inputClass} pr-10`}
@@ -245,8 +294,10 @@ const RegisterForm = ({ switchToLogin }: Props) => {
                     <div className="relative">
                       <FontAwesomeIcon icon={faHashtag} className={iconClass} />
                       <input
+                        id="registrationNumber"
                         placeholder="Registration number"
                         className={inputClass}
+                        autoComplete="on"
                         {...form2.register("registrationNumber")}
                       />
                     </div>
@@ -259,8 +310,10 @@ const RegisterForm = ({ switchToLogin }: Props) => {
                     <div className="relative">
                       <FontAwesomeIcon icon={faHashtag} className={iconClass} />
                       <input
+                        id="gstNumber"
                         placeholder="GST number (e.g. 27ABCDE1234F1Z5)"
                         className={inputClass}
+                        autoComplete="on"
                         {...form2.register("gstNumber")}
                       />
                     </div>
@@ -274,8 +327,10 @@ const RegisterForm = ({ switchToLogin }: Props) => {
                         className={iconClass}
                       />
                       <input
+                        id="location"
                         placeholder="Head office location"
                         className={inputClass}
+                        autoComplete="street-address"
                         {...form2.register("location")}
                       />
                     </div>
@@ -370,17 +425,29 @@ const RegisterForm = ({ switchToLogin }: Props) => {
       </div>
     </div>
 
-    <div className="flex gap-3">
-      <button
-        type="button"
-        onClick={() => goBack(2)}
-        className="w-full h-11 border border-border text-muted-foreground rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-muted/50 transition-all"
-      >
-        Back
-      </button>
-      <button type="submit" className="btn-primary h-11 w-full rounded-lg font-bold text-xs uppercase tracking-widest shadow-lg shadow-primary/20">
-        Submit Application
-      </button>
+    <div className="flex flex-col gap-3">
+      {registerError && (
+        <p className="text-red-500 text-xs text-center font-medium bg-red-500/10 py-2 px-3 rounded border border-red-500/20 break-words whitespace-normal leading-relaxed">
+          {registerError}
+        </p>
+      )}
+      <div className="flex gap-3">
+        <button
+          type="button"
+          onClick={() => goBack(2)}
+          disabled={isPending}
+          className="w-full h-11 border border-border text-muted-foreground rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-muted/50 transition-all disabled:opacity-50"
+        >
+          Back
+        </button>
+        <button 
+          type="submit" 
+          disabled={isPending}
+          className="btn-primary h-11 w-full rounded-lg font-bold text-xs uppercase tracking-widest shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isPending ? "Submitting..." : "Submit Application"}
+        </button>
+      </div>
     </div>
   </form>
 )}
