@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChartLine,
@@ -25,6 +25,7 @@ type Props = {
 
 const Sidebar = ({ role }: Props) => {
   const logout = useAuthStore((state) => state.logout);
+  const navigate = useNavigate();
   const { toggleTheme, isDark } = useTheme();
 
   const adminMenu = [
@@ -121,7 +122,10 @@ const Sidebar = ({ role }: Props) => {
       {/* Footer Profile / Logout */}
       <div className="px-3 py-3 border-t border-border">
         <button
-          onClick={logout}
+          onClick={() => {
+            logout();
+            navigate("/login");
+          }}
           className="w-full flex items-center gap-3 px-2 py-1.5 rounded-md text-xs font-medium text-destructive hover:bg-destructive/10 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30 group hover:scale-[1.02] active:scale-95"
         >
           <div className="w-7 h-7 rounded-md flex items-center justify-center bg-destructive/10 text-destructive group-hover:bg-destructive/20 transition-colors">
