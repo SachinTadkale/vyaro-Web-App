@@ -1,4 +1,4 @@
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBell, faUserCircle } from "@fortawesome/free-solid-svg-icons";
 import type { User } from "@/store/useAuthStore";
@@ -11,6 +11,7 @@ type Props = {
 
 const Navbar = ({ role, user }: Props) => {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const getTitle = () => {
     const path = location.pathname;
@@ -72,19 +73,22 @@ const Navbar = ({ role, user }: Props) => {
         </button>
 
         {/* User Profile */}
-        <div className="flex items-center gap-3 px-3 py-1.5 rounded-lg bg-muted/30 border border-transparent hover:border-border/50 transition-all cursor-pointer">
+        <button 
+          onClick={() => navigate(role === "ADMIN" ? "/dashboard/admin/settings" : "/dashboard/company/profile")}
+          className="flex items-center gap-3 px-3 py-1.5 rounded-lg bg-muted/30 border border-transparent transition-all cursor-pointer hover:bg-muted/50 text-left hover:border-border/50"
+        >
           <div className="text-right hidden sm:block">
             <p className="text-[11px] font-normal text-foreground leading-tight">
-              {user?.name || "User"}
+              {user?.companyName || user?.name}
             </p>
             <p className="text-[9px] text-muted-foreground font-normal uppercase tracking-tighter opacity-60">
-              {user?.email || "user@farmzy.com"}
+              {user?.email}
             </p>
           </div>
           <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary/60 border border-primary/10">
-            <FontAwesomeIcon icon={faUserCircle} size="lg" />
+             <FontAwesomeIcon icon={faUserCircle} size="lg" />
           </div>
-        </div>
+        </button>
       </div>
     </header>
   );

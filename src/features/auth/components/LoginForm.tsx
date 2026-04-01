@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faEnvelope,
+  faHashtag,
   faLock,
   faEye,
   faEyeSlash,
 } from "@fortawesome/free-solid-svg-icons";
 import { motion } from "framer-motion";
+import { useMutation } from "@tanstack/react-query";
+import { loginCompanyAPI } from "@/services/company-auth.api";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useNavigate } from "react-router-dom";
 
 type Props = {
   switchToRegister: () => void;
@@ -32,10 +36,62 @@ const fadeUp = {
 
 const LoginForm = ({ switchToRegister }: Props) => {
   const [showPassword, setShowPassword] = useState(false);
+  const [registrationNo, setRegistrationNo] = useState("");
+  const [password, setPassword] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const navigate = useNavigate();
+  const setAuth = useAuthStore((state) => state.setAuth);
+
+  const { mutate: handleLogin, isPending } = useMutation({
+    mutationFn: () => loginCompanyAPI({ registrationNo, password }),
+    onSuccess: (response) => {
+      // response.data could hold user and token
+      if (response.success && response.data) {
+        const userData = response.data.company || response.data.user;
+        setAuth({ ...userData, role: "COMPANY" }, response.data.token);
+        navigate("/dashboard/company");
+      }
+    },
+    onError: (error: any) => {
+      let msg = error.response?.data?.message || error.message || "Invalid registration number or password";
+      
+      // Override "Invalid credentials" to "Incorrect password" based on user preference
+      if (typeof msg === "string" && msg.toLowerCase().includes("invalid credentials")) {
+        msg = "Incorrect password";
+      }
+      
+      // Handle raw database or excessively long errors cleanly
+      if (typeof msg === "string" && (msg.includes("prisma") || msg.toLowerCase().includes("database"))) {
+        msg = "Unable to connect to the database server. Please try again later.";
+      } else if (typeof msg === "string" && msg.length > 120) {
+        msg = "An unexpected server error occurred. Please try again.";
+      }
+      setErrorMsg(msg);
+    },
+  });
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg("");
+    if (!registrationNo && !password) {
+      setErrorMsg("Please enter both registration number and password.");
+      return;
+    }
+    if (!registrationNo) {
+      setErrorMsg("Please enter your registration number.");
+      return;
+    }
+    if (!password) {
+      setErrorMsg("Please enter your password.");
+      return;
+    }
+    handleLogin();
+  };
 
   return (
     <form
-      onSubmit={(e) => e.preventDefault()}
+      onSubmit={onSubmit}
       className="w-full max-w-sm flex flex-col justify-center gap-6"
     >
       <motion.h2
@@ -48,7 +104,7 @@ const LoginForm = ({ switchToRegister }: Props) => {
       </motion.h2>
 
       <div className="space-y-4">
-        {/* EMAIL */}
+        {/* REGISTRATION NUMBER */}
         <motion.div
           className="relative"
           custom={0}
@@ -56,11 +112,15 @@ const LoginForm = ({ switchToRegister }: Props) => {
           initial="hidden"
           animate="visible"
         >
-          <FontAwesomeIcon icon={faEnvelope} className={iconClass} />
+          <FontAwesomeIcon icon={faHashtag} className={iconClass} />
           <input
-            type="email"
-            placeholder="Email address"
-            autoComplete="email"
+            type="text"
+            name="registrationNo"
+            id="registrationNo"
+            autoComplete="on"
+            value={registrationNo}
+            onChange={(e) => setRegistrationNo(e.target.value)}
+            placeholder="Registration Number (e.g. MH1234)"
             className={inputClass}
           />
         </motion.div>
@@ -76,6 +136,10 @@ const LoginForm = ({ switchToRegister }: Props) => {
           <FontAwesomeIcon icon={faLock} className={iconClass} />
           <input
             type={showPassword ? "text" : "password"}
+            name="password"
+            id="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             placeholder="Password"
             autoComplete="current-password"
             className={`${inputClass} pr-10`}
@@ -88,17 +152,28 @@ const LoginForm = ({ switchToRegister }: Props) => {
         </motion.div>
       </div>
 
+      {errorMsg && (
+        <motion.p
+          className="text-red-500 text-xs text-center font-medium bg-red-500/10 py-2 px-3 rounded border border-red-500/20 break-words whitespace-normal leading-relaxed"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          {errorMsg}
+        </motion.p>
+      )}
+
       {/* BUTTON */}
       <motion.button
         type="submit"
-        className="btn-primary h-11 w-full rounded-lg font-bold text-xs uppercase tracking-widest shadow-lg shadow-primary/20"
+        disabled={isPending}
+        className="btn-primary h-11 w-full rounded-lg font-bold text-xs uppercase tracking-widest shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
         custom={2}
         variants={fadeUp}
         initial="hidden"
         animate="visible"
         whileTap={{ scale: 0.98 }}
       >
-        Login
+        {isPending ? "Logging in..." : "Login"}
       </motion.button>
 
       {/* FORGOT PASSWORD */}

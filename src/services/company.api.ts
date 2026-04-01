@@ -23,7 +23,7 @@ export const deleteProductAPI = async (id: string) => {
 
 /* Marketplace */
 export const fetchFarmerListingsAPI = async () => {
-  const { data } = await api.get("/company/farmer-listings");
+  const { data } = await api.get("/api/marketplace/listings");
   return data;
 };
 

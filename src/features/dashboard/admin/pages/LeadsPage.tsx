@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Lead } from "../types/lead.types";
-import { getLeadsAPI, deleteLeadAPI } from "@/services/leads.api";
+import { getLeads, deleteLead } from "@/services/leads.api";
 
 const LeadsPage = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -11,7 +11,7 @@ const LeadsPage = () => {
   const fetchLeads = async () => {
     try {
       setLoading(true);
-      const data = await getLeadsAPI();
+      const data = await getLeads();
       setLeads(data);
     } catch (err) {
       console.error(err);
@@ -30,7 +30,7 @@ const LeadsPage = () => {
     if (!confirmDelete) return;
 
     try {
-      await deleteLeadAPI(id);
+      await deleteLead(id);
       fetchLeads();
     } catch (err) {
       console.error(err);
