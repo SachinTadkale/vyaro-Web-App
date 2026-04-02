@@ -18,6 +18,8 @@ import { motion } from "framer-motion";
 import { useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/utils/utils";
 import { useTheme } from "@/context/ThemeContext";
+import { logoutCompanyAPI } from "@/services/company.api";
+import { toast } from "sonner";
 
 type Props = {
   role: string;
@@ -25,6 +27,7 @@ type Props = {
 
 const Sidebar = ({ role }: Props) => {
   const logout = useAuthStore((state) => state.logout);
+  const user = useAuthStore((state) => state.user);
   const navigate = useNavigate();
   const { toggleTheme, isDark } = useTheme();
 
@@ -105,7 +108,11 @@ const Sidebar = ({ role }: Props) => {
                   "w-8 h-8 rounded-md flex items-center justify-center transition-colors px-0",
                   isActive ? "bg-primary/20 text-primary" : "bg-muted/40 text-muted-foreground group-hover:bg-muted group-hover:text-foreground"
                 )}>
-                  <FontAwesomeIcon icon={item.icon} className="w-3.5 h-3.5" />
+                  {item.name === "Profile" && user?.profileImageUrl ? (
+                    <img src={user.profileImageUrl} alt="Profile" className="w-full h-full object-cover rounded-md" />
+                  ) : (
+                    <FontAwesomeIcon icon={item.icon} className="w-3.5 h-3.5" />
+                  )}
                 </div>
                 <span className={cn(
                   "transition-colors text-xs",
@@ -122,9 +129,19 @@ const Sidebar = ({ role }: Props) => {
       {/* Footer Profile / Logout */}
       <div className="px-3 py-3 border-t border-border">
         <button
-          onClick={() => {
-            logout();
-            navigate("/login");
+          onClick={async () => {
+            try {
+              if (role === "COMPANY") {
+                await logoutCompanyAPI();
+              }
+            } catch (err) {
+              console.error("Logout API failed", err);
+              toast.error("Logout failed on server, disconnecting locally anyways...");
+            } finally {
+              logout();
+              navigate("/login");
+              toast.info("Logged out successfully");
+            }
           }}
           className="w-full flex items-center gap-3 px-2 py-1.5 rounded-md text-xs font-medium text-destructive hover:bg-destructive/10 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30 group hover:scale-[1.02] active:scale-95"
         >

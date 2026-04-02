@@ -11,6 +11,7 @@ import { useMutation } from "@tanstack/react-query";
 import { loginCompanyAPI } from "@/services/company-auth.api";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 type Props = {
   switchToRegister: () => void;
@@ -50,6 +51,7 @@ const LoginForm = ({ switchToRegister }: Props) => {
       if (response.success && response.data) {
         const userData = response.data.company || response.data.user;
         setAuth({ ...userData, role: "COMPANY" }, response.data.token);
+        toast.success(`Welcome back, ${userData.companyName || userData.name || 'Company'}!`);
         navigate("/dashboard/company");
       }
     },
@@ -68,6 +70,7 @@ const LoginForm = ({ switchToRegister }: Props) => {
         msg = "An unexpected server error occurred. Please try again.";
       }
       setErrorMsg(msg);
+      toast.error(msg);
     },
   });
 

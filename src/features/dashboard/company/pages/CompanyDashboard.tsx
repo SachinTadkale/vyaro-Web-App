@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { fetchFarmerListingsAPI } from "@/services/company.api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { fetchFarmerListingsAPI, fetchCompanyProfileAPI, updateCompanyProfileImageAPI, deleteCompanyProfileImageAPI } from "@/services/company.api";
 import { useAuthStore } from "@/store/useAuthStore";
 import {
   Search,
@@ -17,8 +17,15 @@ import {
   Leaf,
   ShoppingCart,
   Bell,
+  Key,
+  Smartphone,
+  ShieldAlert,
+  Edit,
+  Globe,
+  MapPin,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 import StatCard from "@/components/common/StatCard";
 import {
   Table,
@@ -79,13 +86,7 @@ const MOCK_PRODUCTS: Product[] = [
   { productId: "4", productName: "Cotton Bales", category: "Bundle", unit: "Textile" },
 ];
 
-const MOCK_COMPANY = {
-  name: "AgroTech Pvt Ltd",
-  email: "agrotech@farmzy.com",
-  gst: "27AABCU9603R1ZX",
-  reg: "MH-2019-001234",
-  location: "Pune, Maharashtra",
-};
+
 
 const MOCK_NOTIFS = [
   { id: 1, icon: CheckCircle, color: "text-primary", bg: "bg-primary/10", text: "Your account has been verified.", time: "2h ago" },
@@ -93,13 +94,6 @@ const MOCK_NOTIFS = [
   { id: 3, icon: AlertTriangle, color: "text-amber-400", bg: "bg-amber-500/10", text: "GST renewal due in 30 days.", time: "1d ago" },
 ];
 
-const MOCK_FARMERS = [
-  { id: "f1", farmer: "Ramesh Patil", location: "Nashik, MH", produce: "Organic Onion", qty: "500 KG", price: "₹18/kg", verified: true },
-  { id: "f2", farmer: "Suresh Jadhav", location: "Solapur, MH", produce: "Jowar", qty: "1200 KG", price: "₹22/kg", verified: true },
-  { id: "f3", farmer: "Anil Kumar", location: "Aurangabad, MH", produce: "Soybean", qty: "800 KG", price: "₹45/kg", verified: true },
-  { id: "f4", farmer: "Vijay More", location: "Kolhapur, MH", produce: "Sugarcane", qty: "2000 KG", price: "₹3.5/kg", verified: false },
-  { id: "f5", farmer: "Dnyaneshwar", location: "Pune, MH", produce: "Turmeric", qty: "300 KG", price: "₹95/kg", verified: true },
-];
 
 // ── ProductModal ────────────────────────────────────────────
 const ProductModal = ({
@@ -176,7 +170,7 @@ const ProcureModal = ({
         
         <div className="flex gap-2.5">
           <button onClick={onClose} className="flex-1 rounded-xl py-2.5 text-sm font-semibold border border-border text-muted-foreground hover:bg-muted transition-colors">Cancel</button>
-          <button onClick={() => { alert("Procurement payment gateway and flow is under development. Connecting to farmer..."); onClose(); }} className="flex-1 bg-primary text-primary-foreground font-bold rounded-xl py-2.5 text-sm hover:bg-primary/90 transition-colors">Confirm Order</button>
+          <button onClick={() => { toast.info("Procurement payment gateway and flow is under development. Connecting to farmer..."); onClose(); }} className="flex-1 bg-primary text-primary-foreground font-bold rounded-xl py-2.5 text-sm hover:bg-primary/90 transition-colors">Confirm Order</button>
         </div>
       </motion.div>
     </div>
@@ -187,10 +181,14 @@ const ProcureModal = ({
 const CompanyDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const user = useAuthStore(state => state.user);
+  const updateUser = useAuthStore(state => state.updateUser);
   const [modalOpen, setModalOpen] = useState(false);
   const [procureListing, setProcureListing] = useState<FarmerListing | null>(null);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [search, setSearch] = useState("");
+  const [showImageMenu, setShowImageMenu] = useState(false);
 
   const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
   
@@ -213,6 +211,50 @@ const CompanyDashboard = () => {
       navigate("/login");
     }
   }, [tab, isAuthenticated, isErrorListings, errorListings, navigate]);
+
+  const { data: profileData, isLoading: isLoadingProfile } = useQuery({
+    queryKey: ["companyProfile"],
+    queryFn: fetchCompanyProfileAPI,
+    enabled: tab === "profile",
+  });
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadImageMutation = useMutation({
+    mutationFn: updateCompanyProfileImageAPI,
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["companyProfile"] });
+      if (res.data?.profileImageUrl) {
+        updateUser({ profileImageUrl: res.data.profileImageUrl });
+        toast.success("Profile Image updated successfully!");
+      }
+    },
+    onError: (err) => {
+      console.error("Upload failed", err);
+      toast.error("Failed to upload image.");
+    }
+  });
+
+  const deleteImageMutation = useMutation({
+    mutationFn: deleteCompanyProfileImageAPI,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["companyProfile"] });
+      updateUser({ profileImageUrl: undefined });
+      setShowImageMenu(false);
+      toast.info("Profile Image removed.");
+    },
+    onError: (err) => {
+      console.error("Delete failed", err);
+      toast.error("Failed to delete image.");
+    }
+  });
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      uploadImageMutation.mutate(file);
+      setShowImageMenu(false);
+    }
+  };
 
   const [marketplaceSearch, setMarketplaceSearch] = useState("");
 
@@ -239,7 +281,6 @@ const CompanyDashboard = () => {
     return fl.produce.toLowerCase().includes(q) || fl.farmer.toLowerCase().includes(q) || fl.location.toLowerCase().includes(q);
   });
 
-  const company = MOCK_COMPANY;
   const notifications = MOCK_NOTIFS;
 
   const handleSave = (data: { productName: string; category: string; unit: string }) => {
@@ -506,39 +547,147 @@ const CompanyDashboard = () => {
 
         {tab === "profile" && (
           <motion.div key="profile" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="grid md:grid-cols-2 gap-5">
-            <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-xl font-black text-primary">AG</div>
-                <div>
-                  <h3 className="text-lg font-bold text-foreground">{company.name}</h3>
-                  <p className="text-xs text-muted-foreground">{company.email}</p>
-                  <div className="mt-2 flex items-center gap-2">
-                    <span className="bg-primary/15 text-primary text-[9px] font-bold px-2 py-0.5 rounded-full uppercase flex items-center gap-1.5 border border-primary/20"><ShieldCheck size={11} /> Verified Company</span>
+            <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden flex flex-col">
+              {isLoadingProfile ? (
+                 <div className="p-5"><p className="text-sm text-muted-foreground animate-pulse font-medium">Loading profile data...</p></div>
+              ) : (
+                <>
+                  {/* SaaS Banner */}
+                  <div className="h-28 w-full bg-gradient-to-r from-primary/20 via-primary/5 to-transparent relative"></div>
+                  
+                  <div className="px-6 pb-6 relative -mt-12">
+                    <div className="flex items-end gap-5 mb-6">
+                      <div className="relative">
+                        {/* Profile Image Bubble */}
+                        <div className="w-24 h-24 rounded-2xl bg-card p-1.5 border border-border shadow-sm relative z-10">
+                          <div className="w-full h-full rounded-xl bg-primary/10 flex items-center justify-center text-3xl font-black text-primary overflow-hidden">
+                            {profileData?.data?.profileImageUrl ? (
+                              <img src={profileData.data.profileImageUrl} alt="Company Logo" className="w-full h-full object-cover" />
+                            ) : (
+                              <span>{(profileData?.data?.companyName || user?.companyName || user?.name || "Company").split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase()}</span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Edit Icon (Bottom Right, Half Overlapping) */}
+                        <div 
+                          onClick={() => setShowImageMenu(!showImageMenu)}
+                          className="absolute -bottom-2 -right-2 w-8 h-8 bg-background rounded-full flex items-center justify-center cursor-pointer z-30 shadow-md border border-border hover:bg-muted transition-colors"
+                          title="Edit Options"
+                        >
+                          <Pencil size={13} className="text-foreground" />
+                        </div>
+                        
+                        {/* Dropdown Menu */}
+                        {showImageMenu && (
+                          <div className="absolute top-full left-full mt-2 -ml-6 w-40 bg-card border border-border rounded-xl shadow-xl z-50 py-1 overflow-hidden" onMouseLeave={() => setShowImageMenu(false)}>
+                            <button 
+                              onClick={() => { setShowImageMenu(false); fileInputRef.current?.click(); }}
+                              className="w-full text-left px-4 py-2.5 text-xs font-bold text-foreground hover:bg-muted transition-colors"
+                            >
+                              Update picture
+                            </button>
+                            {profileData?.data?.profileImageUrl && (
+                              <button 
+                                onClick={() => { setShowImageMenu(false); deleteImageMutation.mutate(); }}
+                                className="w-full text-left px-4 py-2.5 text-xs font-bold text-destructive hover:bg-destructive/10 transition-colors"
+                              >
+                                Delete picture
+                              </button>
+                            )}
+                          </div>
+                        )}
+                        
+                        <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
+                        {uploadImageMutation.isPending && (
+                          <div className="absolute inset-0 bg-black/50 rounded-2xl flex items-center justify-center z-40 backdrop-blur-sm">
+                            <span className="w-6 h-6 rounded-full border-2 border-white/40 border-t-white animate-spin"></span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="pb-1">
+                        <h3 className="text-xl font-bold text-foreground leading-tight tracking-tight">{profileData?.data?.companyName || user?.companyName || user?.name || "Unknown Company"}</h3>
+                        <p className="text-xs text-muted-foreground mt-0.5">{profileData?.data?.email || user?.email}</p>
+                        <div className="mt-2.5 flex items-center gap-2">
+                          <span className="bg-primary/15 text-primary text-[10px] font-bold px-2.5 py-1 rounded-full uppercase flex items-center gap-1.5 border border-primary/20">
+                            <ShieldCheck size={12} /> {profileData?.data?.verification === 'VERIFIED' ? 'Verified Company' : 'Pending Verification'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2 pt-2">
+                      {[
+                        ["GST Number", profileData?.data?.gstNumber || "N/A"], 
+                        ["Registration", profileData?.data?.registrationNo || "N/A"], 
+                        ["Head Office", profileData?.data?.hqLocation || "N/A"],
+                        ["Support Phone", "+91 98765 43210"],
+                        ["Website", "www.farmzy-example.com"]
+                      ].map(([k, v]) => (
+                        <div key={k} className="flex justify-between py-3 border-b border-border/50 last:border-0 items-center">
+                          <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{k}</span>
+                          <span className="text-xs font-bold text-foreground bg-muted/40 px-3 py-1.5 rounded-lg border border-border/30">{v}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="flex flex-col gap-5">
+              <div className="bg-card border border-border rounded-2xl p-6 shadow-sm flex-1">
+                <div className="flex items-center justify-between mb-5">
+                  <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Compliance Status</h4>
+                  <button className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1">
+                    <Edit size={12} /> Manage
+                  </button>
+                </div>
+                
+                <div className="space-y-4">
+                  {[
+                    { label: "GST Certificate", status: "Verified", icon: FileCheck, color: "text-green-500", bg: "bg-green-500/10" },
+                    { label: "Business License", status: "Verified", icon: Store, color: "text-green-500", bg: "bg-green-500/10" },
+                    { label: "KYC Status", status: "Approved", icon: ShieldCheck, color: "text-primary", bg: "bg-primary/10" }
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center justify-between p-3 rounded-xl border border-border/50 bg-muted/20 hover:bg-muted/40 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${item.bg}`}>
+                          <item.icon size={14} className={item.color} />
+                        </div>
+                        <span className="text-sm font-semibold text-foreground">{item.label}</span>
+                      </div>
+                      <span className="bg-primary/10 text-primary text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 uppercase border border-primary/20"><CheckCircle size={10} /> {item.status}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
+                <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-5">Account & Security</h4>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 rounded-xl border border-border/50 hover:bg-muted/30 transition-colors cursor-pointer group">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground group-hover:text-foreground transition-colors"><Key size={14} /></div>
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Password</p>
+                        <p className="text-[10px] text-muted-foreground">Last changed 3 months ago</p>
+                      </div>
+                    </div>
+                    <button className="text-xs font-bold text-foreground border border-border px-3 py-1.5 rounded-lg hover:bg-muted">Change</button>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-xl border border-border/50 hover:bg-muted/30 transition-colors cursor-pointer group">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-500"><Smartphone size={14} /></div>
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Two-Factor Authentication</p>
+                        <p className="text-[10px] text-muted-foreground">Not configured</p>
+                      </div>
+                    </div>
+                    <button className="text-xs font-bold text-orange-500 border border-orange-500/20 px-3 py-1.5 rounded-lg hover:bg-orange-500/10">Enable</button>
                   </div>
                 </div>
               </div>
-              <div className="space-y-3">
-                {[["GST Number", company.gst], ["Registration", company.reg], ["Head Office", company.location]].map(([k, v]) => (
-                  <div key={k} className="flex justify-between py-2 border-b border-border/50 last:border-0">
-                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{k}</span>
-                    <span className="text-xs font-bold text-foreground">{v}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
-              <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-4">Compliance Status</h4>
-              <div className="space-y-3">
-                {[["GST Certificate", "Verified"], ["Business License", "Verified"], ["KYC Status", "Approved"]].map(([k, v]) => (
-                  <div key={k} className="flex justify-between py-2 border-b border-border/50 last:border-0">
-                    <span className="text-xs font-medium text-foreground">{k}</span>
-                    <span className="bg-primary/10 text-primary text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1.5 uppercase border border-primary/20"><CheckCircle size={10} /> {v}</span>
-                  </div>
-                ))}
-              </div>
-              <button className="w-full mt-6 border border-border text-foreground font-bold py-2.5 rounded-xl hover:bg-muted transition-all flex items-center justify-center gap-2 text-xs">
-                <FileCheck size={14} /> Update Documentation
-              </button>
             </div>
           </motion.div>
         )}
