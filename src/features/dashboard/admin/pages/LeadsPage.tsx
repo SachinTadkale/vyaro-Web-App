@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Lead } from "../types/lead.types";
 import { getLeads, deleteLead } from "@/services/leads.api";
+import { toast } from "sonner";
 
 const LeadsPage = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -15,6 +16,7 @@ const LeadsPage = () => {
       setLeads(data);
     } catch (err) {
       console.error(err);
+      toast.error("Failed to load leads from server");
     } finally {
       setLoading(false);
     }
@@ -31,9 +33,11 @@ const LeadsPage = () => {
 
     try {
       await deleteLead(id);
+      toast.info("Lead successfully removed from the system");
       fetchLeads();
     } catch (err) {
       console.error(err);
+      toast.error("Failed to remove lead, please try again");
     }
   };
 

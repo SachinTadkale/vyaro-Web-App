@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { getLeads, deleteLead, createLead } from "@/api/leads.api";
 import type { Lead } from "@/api/leads.api";
+import { toast } from "sonner";
 
 const LeadsPage = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -54,16 +55,16 @@ const LeadsPage = () => {
       // ✅ Optimized (no refetch)
       setLeads((prev) => prev.filter((lead) => lead.id !== id));
 
-      alert("Lead deleted successfully");
+      toast.success("Lead deleted successfully");
     } catch {
-      alert("Failed to delete lead");
+      toast.error("Failed to delete lead");
     }
   };
 
   // 🔥 ADD LEAD
   const handleAddLead = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newLead.email) return alert("Email is required");
+    if (!newLead.email) return toast.warning("Email is required");
 
     try {
       setCreating(true);
@@ -75,11 +76,12 @@ const LeadsPage = () => {
       
       setIsModalOpen(false);
       setNewLead({ name: "", email: "", role: "FARMER" });
+      toast.success("Lead added successfully!");
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
-        alert(err.response?.data?.message || "Failed to add lead");
+        toast.error(err.response?.data?.message || "Failed to add lead");
       } else {
-        alert("Something went wrong");
+        toast.error("Something went wrong");
       }
     } finally {
       setCreating(false);
