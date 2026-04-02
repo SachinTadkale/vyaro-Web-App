@@ -16,6 +16,7 @@ import { z } from "zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMutation } from "@tanstack/react-query";
 import { registerCompanyAPI, uploadCompanyDocsAPI } from "@/services/company-auth.api";
+import { toast } from "sonner";
 
 type Props = {
   switchToLogin: () => void;
@@ -164,6 +165,7 @@ const RegisterForm = ({ switchToLogin }: Props) => {
         await uploadDocs(formData);
         
         // 3. Move to Step 4 on total success
+        toast.success("Application successfully registered!");
         goNext(4);
       }
     } catch (error: any) {
@@ -174,6 +176,18 @@ const RegisterForm = ({ switchToLogin }: Props) => {
         msg = "An unexpected server error occurred. Please try again.";
       }
       setRegisterError(msg);
+      toast.error(msg);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLLabelElement>, field: "gstCertificate" | "businessLicense") => {
+    e.preventDefault();
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      form3.setValue(field, e.dataTransfer.files as any, { shouldValidate: true });
     }
   };
 
@@ -364,24 +378,28 @@ const RegisterForm = ({ switchToLogin }: Props) => {
     <div className="space-y-4">
       {/* GST Certificate */}
       <div>
-        <label className="text-sm font-medium text-gray-700 mb-1 block">
+        <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 block">
           GST Certificate
         </label>
-        <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-border rounded-xl py-6 px-4 cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-200 group">
+        <label 
+          onDragOver={handleDragOver}
+          onDrop={(e) => handleDrop(e, "gstCertificate")}
+          className="flex flex-col items-center justify-center w-full border-2 border-dashed border-border/50 hover:border-primary bg-muted/10 hover:bg-primary/5 rounded-xl py-6 px-4 cursor-pointer transition-all duration-200 group"
+        >
           <div className="flex flex-col items-center gap-2 text-center">
             <FontAwesomeIcon
               icon={faFileArrowUp}
-              className="text-2xl text-muted-foreground/20 group-hover:text-primary transition-colors duration-200"
+              className="text-2xl text-muted-foreground/30 group-hover:text-primary transition-colors duration-200"
             />
-            <p className="text-xs text-muted-foreground/60 group-hover:text-foreground">
+            <p className="text-xs text-muted-foreground/60 group-hover:text-foreground transition-colors duration-200">
               {form3.watch("gstCertificate")?.[0]?.name ?? (
                 <>
-                  <span className="font-bold text-primary">Upload file</span>{" "}
+                  <span className="font-bold text-primary">Click to upload</span>{" "}
                   or drag & drop
                 </>
               )}
             </p>
-            <p className="text-[10px] text-muted-foreground/30 uppercase tracking-tighter">PDF, JPG, PNG — MAX 5MB</p>
+            <p className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest mt-1">PDF, JPG, PNG — MAX 5MB</p>
           </div>
           <input
             type="file"
@@ -395,24 +413,28 @@ const RegisterForm = ({ switchToLogin }: Props) => {
 
       {/* Business License */}
       <div>
-        <label className="text-sm font-medium text-gray-700 mb-1 block">
-          Business License or Registration Document
+        <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 block">
+          Company Registration License
         </label>
-        <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-xl py-5 px-4 cursor-pointer hover:border-green-500 hover:bg-green-50 transition-all duration-200 group">
-          <div className="flex flex-col items-center gap-1 text-center">
+        <label 
+          onDragOver={handleDragOver}
+          onDrop={(e) => handleDrop(e, "businessLicense")}
+          className="flex flex-col items-center justify-center w-full border-2 border-dashed border-border/50 hover:border-primary bg-muted/10 hover:bg-primary/5 rounded-xl py-6 px-4 cursor-pointer transition-all duration-200 group"
+        >
+          <div className="flex flex-col items-center gap-2 text-center">
             <FontAwesomeIcon
               icon={faFileArrowUp}
-              className="text-2xl text-gray-400 group-hover:text-green-500 transition-colors duration-200"
+              className="text-2xl text-muted-foreground/30 group-hover:text-primary transition-colors duration-200"
             />
-            <p className="text-sm text-gray-500 group-hover:text-green-600">
+            <p className="text-xs text-muted-foreground/60 group-hover:text-foreground transition-colors duration-200">
               {form3.watch("businessLicense")?.[0]?.name ?? (
                 <>
-                  <span className="font-medium text-green-600">Click to upload</span>{" "}
+                  <span className="font-bold text-primary">Click to upload</span>{" "}
                   or drag & drop
                 </>
               )}
             </p>
-            <p className="text-xs text-gray-400">PDF, JPG, PNG — max 5MB</p>
+            <p className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest mt-1">PDF, JPG, PNG — MAX 5MB</p>
           </div>
           <input
             type="file"

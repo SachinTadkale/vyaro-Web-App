@@ -23,7 +23,7 @@ export const deleteProductAPI = async (id: string) => {
 
 /* Marketplace */
 export const fetchFarmerListingsAPI = async () => {
-  const { data } = await api.get("/api/marketplace/listings");
+  const { data } = await api.get("/api/marketplace/getListings");
   return data;
 };
 
@@ -33,8 +33,33 @@ export const fetchCompanyStatsAPI = async () => {
   return data;
 };
 
+export const loginCompanyAPI = async (data: any) => {
+  const response = await api.post("/api/companyAuth/login", data);
+  return response.data;
+};
+
+export const logoutCompanyAPI = async () => {
+  const response = await api.post("/api/companyAuth/logout");
+  return response.data;
+};
+
 export const fetchCompanyProfileAPI = async () => {
-  const { data } = await api.get("/company/profile");
+  const { data } = await api.get("/api/companyProfile");
+  return data;
+};
+
+export const updateCompanyProfileImageAPI = async (file: File) => {
+  const formData = new FormData();
+  formData.append("image", file);
+  
+  const { data } = await api.put("/api/companyProfile/profile-image", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data;
+};
+
+export const deleteCompanyProfileImageAPI = async () => {
+  const { data } = await api.delete("/api/companyProfile/profile-image");
   return data;
 };
 
