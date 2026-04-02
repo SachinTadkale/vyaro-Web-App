@@ -41,6 +41,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/common/Tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faUser } from "@fortawesome/free-solid-svg-icons";
 
 // ── Types ──────────────────────────────────────────────────
 export interface Product {
@@ -549,7 +552,37 @@ const CompanyDashboard = () => {
           <motion.div key="profile" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="grid md:grid-cols-2 gap-5">
             <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden flex flex-col">
               {isLoadingProfile ? (
-                 <div className="p-5"><p className="text-sm text-muted-foreground animate-pulse font-medium">Loading profile data...</p></div>
+                <>
+                  <div className="h-28 w-full bg-gradient-to-r from-primary/10 via-primary/5 to-transparent relative">
+                    <Skeleton className="absolute inset-0 rounded-none bg-white/30" />
+                  </div>
+
+                  <div className="px-6 pb-6 relative -mt-12">
+                    <div className="flex items-end gap-5 mb-6">
+                      <div className="relative">
+                        <div className="w-24 h-24 rounded-2xl bg-card p-1.5 border border-border shadow-sm relative z-10">
+                          <Skeleton className="w-full h-full rounded-xl bg-primary/10" />
+                        </div>
+                        {/* <Skeleton className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full border border-border shadow-md z-20" /> */}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 pt-2">
+                      {[
+                        "5rem",
+                        "6rem",
+                        "7rem",
+                        "8rem",
+                        "10rem",
+                      ].map((valueWidth, index) => (
+                        <div key={index} className="flex justify-between py-3 border-b border-border/50 last:border-0 items-center gap-4">
+                          <Skeleton className="h-3 w-24" />
+                          <Skeleton className="h-8 rounded-lg" style={{ width: valueWidth }} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
               ) : (
                 <>
                   {/* SaaS Banner */}
@@ -564,7 +597,7 @@ const CompanyDashboard = () => {
                             {profileData?.data?.profileImageUrl ? (
                               <img src={profileData.data.profileImageUrl} alt="Company Logo" className="w-full h-full object-cover" />
                             ) : (
-                              <span>{(profileData?.data?.companyName || user?.companyName || user?.name || "Company").split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase()}</span>
+                              <FontAwesomeIcon icon={faUser} />
                             )}
                           </div>
                         </div>
