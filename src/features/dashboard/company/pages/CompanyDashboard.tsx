@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchFarmerListingsAPI, fetchCompanyProfileAPI, updateCompanyProfileImageAPI, deleteCompanyProfileImageAPI } from "@/services/company.api";
 import { useAuthStore } from "@/store/useAuthStore";
 import {
   Search,
@@ -25,7 +24,6 @@ import {
   MapPin,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "sonner";
 import StatCard from "@/components/common/StatCard";
 import {
   Table,
@@ -170,7 +168,7 @@ const ProcureModal = ({
         
         <div className="flex gap-2.5">
           <button onClick={onClose} className="flex-1 rounded-xl py-2.5 text-sm font-semibold border border-border text-muted-foreground hover:bg-muted transition-colors">Cancel</button>
-          <button onClick={() => { toast.info("Procurement payment gateway and flow is under development. Connecting to farmer..."); onClose(); }} className="flex-1 bg-primary text-primary-foreground font-bold rounded-xl py-2.5 text-sm hover:bg-primary/90 transition-colors">Confirm Order</button>
+          <button onClick={() => { onClose(); }} className="flex-1 bg-primary text-primary-foreground font-bold rounded-xl py-2.5 text-sm hover:bg-primary/90 transition-colors">Confirm Order</button>
         </div>
       </motion.div>
     </div>
@@ -197,7 +195,7 @@ const CompanyDashboard = () => {
 
   const { data: farmerListingsData, isLoading: isLoadingListings, isError: isErrorListings, error: errorListings } = useQuery({
     queryKey: ["marketplaceListings"],
-    queryFn: fetchFarmerListingsAPI,
+    queryFn: async () => [],
     enabled: tab === "marketplace" || tab === "overview",
   });
 
@@ -214,37 +212,30 @@ const CompanyDashboard = () => {
 
   const { data: profileData, isLoading: isLoadingProfile } = useQuery({
     queryKey: ["companyProfile"],
-    queryFn: fetchCompanyProfileAPI,
+    queryFn: async () => null,
     enabled: tab === "profile",
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadImageMutation = useMutation({
-    mutationFn: updateCompanyProfileImageAPI,
-    onSuccess: (res) => {
+    mutationFn: async () => ({ data: null }),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["companyProfile"] });
-      if (res.data?.profileImageUrl) {
-        updateUser({ profileImageUrl: res.data.profileImageUrl });
-        toast.success("Profile Image updated successfully!");
-      }
     },
-    onError: (err) => {
-      console.error("Upload failed", err);
-      toast.error("Failed to upload image.");
+    onError: () => {
+      console.error("Upload failed");
     }
   });
 
   const deleteImageMutation = useMutation({
-    mutationFn: deleteCompanyProfileImageAPI,
+    mutationFn: async () => null,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["companyProfile"] });
       updateUser({ profileImageUrl: undefined });
       setShowImageMenu(false);
-      toast.info("Profile Image removed.");
     },
-    onError: (err) => {
-      console.error("Delete failed", err);
-      toast.error("Failed to delete image.");
+    onError: () => {
+      console.error("Delete failed");
     }
   });
 

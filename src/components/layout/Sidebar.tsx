@@ -18,8 +18,6 @@ import { motion } from "framer-motion";
 import { useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/utils/utils";
 import { useTheme } from "@/context/ThemeContext";
-import { logoutCompanyAPI } from "@/services/company.api";
-import { toast } from "sonner";
 
 type Props = {
   role: string;
@@ -129,19 +127,9 @@ const Sidebar = ({ role }: Props) => {
       {/* Footer Profile / Logout */}
       <div className="px-3 py-3 border-t border-border">
         <button
-          onClick={async () => {
-            try {
-              if (role === "COMPANY") {
-                await logoutCompanyAPI();
-              }
-            } catch (err) {
-              console.error("Logout API failed", err);
-              toast.error("Logout failed on server, disconnecting locally anyways...");
-            } finally {
-              logout();
-              navigate("/login");
-              toast.info("Logged out successfully");
-            }
+          onClick={() => {
+            logout();
+            navigate("/login");
           }}
           className="w-full flex items-center gap-3 px-2 py-1.5 rounded-md text-xs font-medium text-destructive hover:bg-destructive/10 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30 group hover:scale-[1.02] active:scale-95"
         >

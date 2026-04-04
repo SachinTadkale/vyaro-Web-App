@@ -8,10 +8,8 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { motion } from "framer-motion";
 import { useMutation } from "@tanstack/react-query";
-import { loginCompanyAPI } from "@/services/company-auth.api";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
 
 type Props = {
   switchToRegister: () => void;
@@ -45,32 +43,30 @@ const LoginForm = ({ switchToRegister }: Props) => {
   const setAuth = useAuthStore((state) => state.setAuth);
 
   const { mutate: handleLogin, isPending } = useMutation({
-    mutationFn: () => loginCompanyAPI({ registrationNo, password }),
+    mutationFn: async () => {
+      // API call removed - placeholder for future implementation
+      return { success: false, data: null };
+    },
     onSuccess: (response) => {
-      // response.data could hold user and token
       if (response.success && response.data) {
         const userData = response.data.company || response.data.user;
         setAuth({ ...userData, role: "COMPANY" }, response.data.token);
-        toast.success(`Welcome back, ${userData.companyName || userData.name || 'Company'}!`);
         navigate("/dashboard/company");
       }
     },
     onError: (error: any) => {
       let msg = error.response?.data?.message || error.message || "Invalid registration number or password";
       
-      // Override "Invalid credentials" to "Incorrect password" based on user preference
       if (typeof msg === "string" && msg.toLowerCase().includes("invalid credentials")) {
         msg = "Incorrect password";
       }
       
-      // Handle raw database or excessively long errors cleanly
       if (typeof msg === "string" && (msg.includes("prisma") || msg.toLowerCase().includes("database"))) {
         msg = "Unable to connect to the database server. Please try again later.";
       } else if (typeof msg === "string" && msg.length > 120) {
         msg = "An unexpected server error occurred. Please try again.";
       }
       setErrorMsg(msg);
-      toast.error(msg);
     },
   });
 

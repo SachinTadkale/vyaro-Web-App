@@ -14,9 +14,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion, AnimatePresence } from "framer-motion";
-import { useMutation } from "@tanstack/react-query";
-import { registerCompanyAPI, uploadCompanyDocsAPI } from "@/services/company-auth.api";
-import { toast } from "sonner";
 
 type Props = {
   switchToLogin: () => void;
@@ -100,15 +97,7 @@ const RegisterForm = ({ switchToLogin }: Props) => {
   const [showPassword, setShowPassword] = useState(false);
   const [registerError, setRegisterError] = useState("");
 
-  const { mutateAsync: registerCompany, isPending: isRegistering } = useMutation({
-    mutationFn: registerCompanyAPI,
-  });
-
-  const { mutateAsync: uploadDocs, isPending: isUploading } = useMutation({
-    mutationFn: uploadCompanyDocsAPI,
-  });
-
-  const isPending = isRegistering || isUploading;
+  const isPending = false;
 
   const form1 = useForm<Step1Data>({
     resolver: zodResolver(step1Schema),
@@ -136,47 +125,22 @@ const RegisterForm = ({ switchToLogin }: Props) => {
 
   const onStep1Submit = () => goNext(2);
   const onStep2Submit = () => goNext(3);
-  const onStep3Submit = async (data: Step3Data) => {
+  const onStep3Submit = async () => {
     setRegisterError("");
-    const allData = {
-      ...form1.getValues(),
-      ...form2.getValues(),
-    };
-
-    const payload = {
-      companyName: allData.companyName,
-      registrationNo: allData.registrationNumber,
-      hqLocation: allData.location,
-      gstNumber: allData.gstNumber,
-      email: allData.email,
-      password: allData.password,
-    };
-
     try {
-      // 1. Register company
-      const regResponse = await registerCompany(payload);
-      if (regResponse.success && regResponse.data.companyId) {
-        // 2. Upload documents
-        const formData = new FormData();
-        formData.append("companyId", regResponse.data.companyId);
-        formData.append("gst", data.gstCertificate[0]);
-        formData.append("license", data.businessLicense[0]);
-
-        await uploadDocs(formData);
-        
-        // 3. Move to Step 4 on total success
-        toast.success("Application successfully registered!");
-        goNext(4);
+      // Move to step 4 after successful form validation
+      goNext(4);
+    } catch (error: unknown) {
+      let msg = "Failed to register. Please try again.";
+      if (error instanceof Error) {
+        msg = error.message;
       }
-    } catch (error: any) {
-      let msg = error.response?.data?.message || error.message || "Failed to register. Please try again.";
       if (typeof msg === "string" && (msg.includes("prisma") || msg.toLowerCase().includes("database"))) {
         msg = "Unable to connect to the database server. Please try again later.";
       } else if (typeof msg === "string" && msg.length > 120) {
         msg = "An unexpected server error occurred. Please try again.";
       }
       setRegisterError(msg);
-      toast.error(msg);
     }
   };
 
@@ -187,7 +151,7 @@ const RegisterForm = ({ switchToLogin }: Props) => {
   const handleDrop = (e: React.DragEvent<HTMLLabelElement>, field: "gstCertificate" | "businessLicense") => {
     e.preventDefault();
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      form3.setValue(field, e.dataTransfer.files as any, { shouldValidate: true });
+      form3.setValue(field, e.dataTransfer.files, { shouldValidate: true });
     }
   };
 

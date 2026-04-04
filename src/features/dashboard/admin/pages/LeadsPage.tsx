@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import type { Lead } from "../types/lead.types";
-import { getLeads, deleteLead } from "@/services/leads.api";
-import { toast } from "sonner";
 
 const LeadsPage = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -12,11 +10,10 @@ const LeadsPage = () => {
   const fetchLeads = async () => {
     try {
       setLoading(true);
-      const data = await getLeads();
-      setLeads(data);
+      // API call removed - placeholder for future implementation
+      setLeads([]);
     } catch (err) {
       console.error(err);
-      toast.error("Failed to load leads from server");
     } finally {
       setLoading(false);
     }
@@ -32,12 +29,10 @@ const LeadsPage = () => {
     if (!confirmDelete) return;
 
     try {
-      await deleteLead(id);
-      toast.info("Lead successfully removed from the system");
+      // API call removed - placeholder for future implementation
       fetchLeads();
     } catch (err) {
       console.error(err);
-      toast.error("Failed to remove lead, please try again");
     }
   };
 
