@@ -5,25 +5,25 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 20%;
+    --background: 148 50% 94%;
+    --foreground: 145 20% 18%;
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 20%;
+    --card-foreground: 145 20% 18%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 20%;
-    --primary: 213 94% 68%;
+    --popover-foreground: 145 20% 18%;
+    --primary: 145 60% 45%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 90%;
-    --secondary-foreground: 0 0% 20%;
-    --muted: 0 0% 95%;
-    --muted-foreground: 0 0% 50%;
-    --accent: 213 94% 68%;
-    --accent-foreground: 0 0% 20%;
+    --secondary: 148 40% 85%;
+    --secondary-foreground: 145 25% 18%;
+    --muted: 148 35% 92%;
+    --muted-foreground: 145 30% 25%;
+    --accent: 145 60% 45%;
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 100% 50%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 85%;
-    --input: 0 0% 95%;
-    --ring: 213 94% 68%;
+    --border: 145 25% 85%;
+    --input: 148 35% 96%;
+    --ring: 145 60% 45%;
     --radius: 4px;
   }
 }
@@ -35,8 +35,14 @@
     font-family: "Outfit", sans-serif;
   }
 
-  body {
+  html,
+  body,
+  #root {
+    min-height: 100%;
     background-color: hsl(var(--background));
+  }
+
+  body {
     color: hsl(var(--foreground));
     font-family: "Outfit", sans-serif;
   }

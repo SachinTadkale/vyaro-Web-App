@@ -3,7 +3,6 @@ import type { User } from "@/store/useAuthStore";
 import { useAuthStore } from "@/store/useAuthStore";
 
 type Props = {
-  role: string;
   user: User | null;
 };
 

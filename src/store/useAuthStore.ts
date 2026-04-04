@@ -6,7 +6,7 @@ export interface User {
   name?: string;
   companyName?: string;
   email: string;
-  role: "ADMIN" | "COMPANY" | "FARMER";
+  role: "COMPANY";
   avatar?: string;
   profileImageUrl?: string;
   isBlocked?: boolean;
