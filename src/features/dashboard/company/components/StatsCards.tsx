@@ -1,9 +1,13 @@
 import StatCard from "@/components/common/StatCard";
-import { useCompanyDashboard } from "@/hooks/useCompanyDashboard";
+
+const stats = [
+  { label: "Views", value: 1240, subValue: "Today", icon: "👀", color: "primary" },
+  { label: "Orders", value: 78, subValue: "This week", icon: "📦", color: "secondary" },
+  { label: "Revenue", value: "₹12k", subValue: "Monthly", icon: "💰", color: "green" },
+  { label: "Reviews", value: 19, subValue: "New", icon: "⭐", color: "yellow" },
+];
 
 const StatsCards = () => {
-  const { stats } = useCompanyDashboard();
-
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {stats.map((stat, i) => (

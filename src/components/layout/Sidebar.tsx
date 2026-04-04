@@ -1,23 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faChartLine,
-  faUsers,
-  faFileCircleCheck,
-  faBuilding,
-  faRightFromBracket,
-  faSun,
-  faMoon,
-  faSeedling,
-  faStore,
-  faBoxes,
-  faBell,
-  faUser,
-} from "@fortawesome/free-solid-svg-icons";
-import { motion } from "framer-motion";
 import { useAuthStore } from "@/store/useAuthStore";
-import { cn } from "@/utils/utils";
-import { useTheme } from "@/context/ThemeContext";
 
 type Props = {
   role: string;
@@ -27,49 +9,23 @@ const Sidebar = ({ role }: Props) => {
   const logout = useAuthStore((state) => state.logout);
   const user = useAuthStore((state) => state.user);
   const navigate = useNavigate();
-  const { toggleTheme, isDark } = useTheme();
-
-  const adminMenu = [
-    { name: "Dashboard", path: "/dashboard/admin/overview", icon: faChartLine },
-    { name: "KYC Requests", path: "/dashboard/admin/kyc", icon: faFileCircleCheck },
-    { name: "Farmers", path: "/dashboard/admin/users", icon: faUsers },
-    { name: "Companies", path: "/dashboard/admin/companies", icon: faBuilding },
-    { name: "Leads", path: "/dashboard/admin/leads", icon: faSeedling },
-  ];
 
   const companyMenu = [
-    { name: "Overview", path: "/dashboard/company/overview", icon: faChartLine },
-    { name: "Marketplace", path: "/dashboard/company/marketplace", icon: faStore },
-    { name: "My Products", path: "/dashboard/company/products", icon: faBoxes },
-    { name: "Notifications", path: "/dashboard/company/notifications", icon: faBell },
-    { name: "Profile", path: "/dashboard/company/profile", icon: faUser },
+    { name: "Overview", path: "/dashboard/company/overview", symbol: "O" },
+    { name: "Marketplace", path: "/dashboard/company/marketplace", symbol: "M" },
+    { name: "My Products", path: "/dashboard/company/products", symbol: "P" },
+    { name: "Notifications", path: "/dashboard/company/notifications", symbol: "N" },
+    { name: "Profile", path: "/dashboard/company/profile", symbol: "U" },
   ];
 
-  const menuItems = role === "ADMIN" ? adminMenu : companyMenu;
+  const menuItems = companyMenu;
 
   return (
-    <aside
-      className={cn(
-        "hidden md:flex flex-col w-60 border-r fixed h-full z-20 transition-all duration-200",
-        "bg-card border-border shadow-sm"
-      )}
-    >
-      {/* Brand + Theme Toggle */}
-      <div className="px-5 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-xl font-black tracking-tight text-foreground">
-            Farm<span className="text-primary">Zy</span>
-          </span>
-          <span className="bg-primary/10 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase">
-            {role}
-          </span>
-        </div>
-        <button
-          onClick={toggleTheme}
-          className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-muted text-muted-foreground transition-colors"
-        >
-          <FontAwesomeIcon icon={isDark ? faSun : faMoon} size="sm" />
-        </button>
+    <aside className="hidden md:flex flex-col w-60 border-r fixed h-full z-20 bg-card border-border">
+      {/* Brand */}
+      <div className="px-5 py-4 flex items-center gap-2 border-b">
+        <span className="text-lg font-bold text-foreground">FarmZy</span>
+        <span className="text-xs font-bold px-2 py-1 bg-primary text-white rounded">{role}</span>
       </div>
 
       {/* Navigation */}
@@ -83,41 +39,21 @@ const Sidebar = ({ role }: Props) => {
             key={item.name}
             to={item.path}
             className={({ isActive }) =>
-              cn(
-                "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 relative group outline-none",
-                "border border-transparent hover:scale-[1.02] active:scale-95",
-                isActive
-                  ? "bg-primary/20 text-primary border-primary/30 shadow-none"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:bg-muted focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-primary/20 hover:border-border/50"
-              )
+              isActive
+                ? "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium bg-primary text-white border border-primary"
+                : "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground border border-transparent"
             }
           >
             {({ isActive }) => (
               <>
-                {isActive && (
-                  <motion.div
-                    layoutId="active-indicator"
-                    className="absolute left-0 w-1 h-6 bg-primary rounded-r-full"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                  />
-                )}
-                <div className={cn(
-                  "w-8 h-8 rounded-md flex items-center justify-center transition-colors px-0",
-                  isActive ? "bg-primary/20 text-primary" : "bg-muted/40 text-muted-foreground group-hover:bg-muted group-hover:text-foreground"
-                )}>
+                <div className={isActive ? "text-white" : "text-muted-foreground"}>
                   {item.name === "Profile" && user?.profileImageUrl ? (
-                    <img src={user.profileImageUrl} alt="Profile" className="w-full h-full object-cover rounded-md" />
+                    <img src={user.profileImageUrl} alt="Profile" className="w-6 h-6 object-cover rounded" />
                   ) : (
-                    <FontAwesomeIcon icon={item.icon} className="w-3.5 h-3.5" />
+                    <span className="font-bold text-sm">{item.symbol}</span>
                   )}
                 </div>
-                <span className={cn(
-                  "transition-colors text-xs",
-                  isActive ? "text-primary font-bold" : "text-muted-foreground group-hover:text-foreground"
-                )}>
-                  {item.name}
-                </span>
+                <span className="text-xs">{item.name}</span>
               </>
             )}
           </NavLink>
@@ -131,11 +67,9 @@ const Sidebar = ({ role }: Props) => {
             logout();
             navigate("/login");
           }}
-          className="w-full flex items-center gap-3 px-2 py-1.5 rounded-md text-xs font-medium text-destructive hover:bg-destructive/10 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30 group hover:scale-[1.02] active:scale-95"
+          className="w-full flex items-center gap-3 px-2 py-2 rounded-md text-xs font-medium text-destructive bg-destructive/20 border border-destructive"
         >
-          <div className="w-7 h-7 rounded-md flex items-center justify-center bg-destructive/10 text-destructive group-hover:bg-destructive/20 transition-colors">
-            <FontAwesomeIcon icon={faRightFromBracket} className="w-3 h-3" />
-          </div>
+          <span className="text-base">↩</span>
           <span>Logout</span>
         </button>
       </div>

@@ -6,13 +6,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/common/Table";
-import type { Product } from "@/hooks/useCompanyDashboard";import Badge from "@/components/common/Badge";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPencil, faTrash } from "@fortawesome/free-solid-svg-icons";
+import Badge from "@/components/common/Badge";
+
+interface TableProduct {
+  id: string;
+  name: string;
+  category: string;
+  unit: string;
+}
 
 interface Props {
-  products: Product[];
-  onEdit?: (product: Product) => void;
+  products: TableProduct[];
+  onEdit?: (product: TableProduct) => void;
   onDelete?: (id: string) => void;
 }
 
@@ -30,8 +35,8 @@ const RecentProductsTable = ({ products, onEdit, onDelete }: Props) => {
         </TableHeader>
         <TableBody>
           {products.map((product) => (
-            <TableRow key={product.productId} className="table-row-hover">
-              <TableCell className="font-bold">{product.productName}</TableCell>
+            <TableRow key={product.id} className="table-row-hover">
+              <TableCell className="font-bold">{product.name}</TableCell>
               <TableCell>
                 <Badge variant="info">{product.category}</Badge>
               </TableCell>
@@ -42,13 +47,13 @@ const RecentProductsTable = ({ products, onEdit, onDelete }: Props) => {
                     onClick={() => onEdit?.(product)}
                     className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-primary/10 text-primary transition-colors"
                   >
-                    <FontAwesomeIcon icon={faPencil} size="xs" />
+                    <span className="text-[11px] font-bold">Edit</span>
                   </button>
                   <button
-                    onClick={() => onDelete?.(product.productId)}
+                    onClick={() => onDelete?.(product.id)}
                     className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-destructive/10 text-destructive transition-colors"
                   >
-                    <FontAwesomeIcon icon={faTrash} size="xs" />
+                    <span className="text-[11px] font-bold">Del</span>
                   </button>
                 </div>
               </TableCell>

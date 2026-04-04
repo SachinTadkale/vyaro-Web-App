@@ -40,30 +40,14 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        farmGreen: "#2E7D32", // Primary Branding
-        farmDark: "#1B5E20",
-        farmBg: "#F1F8E9",
-        farmLeaf: "#81C784",
-        // Unified Design System Tokens
-        neutral: {
-          50: "#F7F8FA", // Base Background
-          100: "#E5E7EB",
-          200: "#D1D5DB",
-          300: "#9CA3AF",
-          400: "#6B7280",
-          500: "#374151",
-          600: "#1F2937",
-          700: "#111827", // Surface / Cards (Dark)
-          800: "#0B1220", // Background (Dark)
-          900: "#060D1F",
-        },
       },
       borderRadius: {
-        xl: "12px",
-        lg: "8px",
-        md: "6px",
+        xl: "8px",
+        lg: "6px",
+        md: "4px",
       },
     },
   },
   plugins: [tailwindAnimate],
 };
+

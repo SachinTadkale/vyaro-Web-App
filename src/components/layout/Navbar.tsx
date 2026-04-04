@@ -1,93 +1,47 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBell, faUserCircle } from "@fortawesome/free-solid-svg-icons";
 import type { User } from "@/store/useAuthStore";
-import { cn } from "@/utils/utils";
+import { useAuthStore } from "@/store/useAuthStore";
 
 type Props = {
   role: string;
   user: User | null;
 };
 
-const Navbar = ({ role, user }: Props) => {
+const Navbar = ({ user }: Props) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const logout = useAuthStore((state) => state.logout);
 
   const getTitle = () => {
     const path = location.pathname;
-    if (path.includes("overview")) return "Platform Insights";
+    if (path.includes("overview")) return "Overview";
     if (path.includes("kyc")) return "KYC Requests";
     if (path.includes("users")) return "Farmer Management";
     if (path.includes("companies")) return "Company Management";
-    if (path.includes("leads")) return "Leads & Inquiries";
+    if (path.includes("leads")) return "Leads";
     if (path.includes("marketplace")) return "Marketplace";
     if (path.includes("products")) return "My Products";
     if (path.includes("notifications")) return "Notifications";
-    if (path.includes("profile")) return "Account Settings";
-    if (path.includes("dashboard")) return "Dashboard Overview";
+    if (path.includes("profile")) return "Profile";
+    if (path.includes("dashboard")) return "Dashboard";
     return "Dashboard";
   };
 
-  const getSubtitle = () => {
-    const path = location.pathname;
-    const isAdmin = role === "ADMIN";
-    
-    if (isAdmin) {
-      if (path.includes("overview")) return "Platform Growth & Real-time Analytics";
-      if (path.includes("kyc")) return "Identity Verification & Trust Compliance";
-      if (path.includes("users")) return "Farmer Registry & Compliance Management";
-      if (path.includes("companies")) return "B2B Entity & Organizational Controls";
-      if (path.includes("leads")) return "Market Demand & Signalling Signals";
-      return "Platform Control Center";
-    }
-
-    if (path.includes("overview")) return "Business Intelligence Dashboard";
-    if (path.includes("marketplace")) return "Global Commodity Trading Floor";
-    if (path.includes("products")) return "Inventory & SKU Performance";
-    return "FarmZy Business Console";
-  };
-
   return (
-    <header className="sticky top-0 z-10 w-full bg-background/80 backdrop-blur-md px-6 py-3 flex items-center justify-between transition-colors duration-200">
-      {/* Page Title */}
-      <div>
-        <h1 className="text-lg font-normal text-foreground transition-all duration-200 uppercase tracking-widest">
-          {getTitle()}
-        </h1>
-        <p className="text-[10px] text-muted-foreground font-normal uppercase tracking-tight opacity-60">
-          {getSubtitle()}
-        </p>
-      </div>
-
-      {/* Action Icons */}
+    <header className="sticky top-0 z-10 w-full bg-card border-b border-border px-6 py-4 flex items-center justify-between">
+      <h2 className="text-xl font-bold text-foreground">{getTitle()}</h2>
       <div className="flex items-center gap-4">
-        {/* Notifications */}
+        <div className="px-4 py-2 bg-muted rounded-lg text-sm text-muted-foreground">
+          {user?.email || "User"}
+        </div>
         <button
-          className={cn(
-            "relative w-9 h-9 rounded-lg flex items-center justify-center transition-all",
-            "bg-muted/30 text-muted-foreground/60 hover:bg-muted hover:text-foreground border border-transparent hover:border-border/50"
-          )}
+          onClick={() => {
+            logout();
+            navigate("/login");
+          }}
+          className="px-4 py-2 text-sm font-medium bg-destructive/10 text-destructive rounded-lg hover:bg-destructive/20 transition"
         >
-          <FontAwesomeIcon icon={faBell} size="sm" />
-          <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-destructive rounded-full" />
-        </button>
-
-        {/* User Profile */}
-        <button 
-          onClick={() => navigate(role === "ADMIN" ? "/dashboard/admin/settings" : "/dashboard/company/profile")}
-          className="flex items-center gap-3 px-3 py-1.5 rounded-lg bg-muted/30 border border-transparent transition-all cursor-pointer hover:bg-muted/50 text-left hover:border-border/50"
-        >
-          <div className="text-right hidden sm:block">
-            <p className="text-[11px] font-normal text-foreground leading-tight">
-              {user?.companyName || user?.name}
-            </p>
-            <p className="text-[9px] text-muted-foreground font-normal uppercase tracking-tighter opacity-60">
-              {user?.email}
-            </p>
-          </div>
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary/60 border border-primary/10">
-             <FontAwesomeIcon icon={faUserCircle} size="lg" />
-          </div>
+          Logout
         </button>
       </div>
     </header>

@@ -1,10 +1,9 @@
 import { cn } from "@/utils/utils";
-import type { LucideIcon } from "lucide-react";
 
 interface Props {
   label: string;
   value: string | number;
-  icon?: LucideIcon;
+  icon?: string;
   subValue?: string;
   trend?: {
     value: string;
@@ -18,7 +17,7 @@ interface Props {
 const StatCard = ({
   label,
   value,
-  icon: Icon,
+  icon,
   subValue,
   trend,
   color = "primary",
@@ -32,7 +31,7 @@ const StatCard = ({
           <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
             {label}
           </p>
-          {Icon && (
+          {icon && (
             <div
               className={cn(
                 "w-9 h-9 rounded-lg flex items-center justify-center transition-all shrink-0",
@@ -47,7 +46,7 @@ const StatCard = ({
                 }
               )}
             >
-              <Icon size={18} strokeWidth={2.5} />
+              <span className="text-base">{icon}</span>
             </div>
           )}
         </div>

@@ -1,5 +1,4 @@
 import type { Notification } from "@/hooks/useCompanyDashboard";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { cn } from "@/utils/utils";
 
 interface Props {
@@ -14,21 +13,17 @@ const RecentActivityFeed = ({ notifications }: Props) => {
           <div
             className={cn(
               "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5",
-              n.color === "success"
-                ? "bg-green-500/10 text-green-500"
-                : n.color === "warning"
-                ? "bg-amber-500/10 text-amber-500"
-                : "bg-blue-500/10 text-blue-500"
+              n.read ? "bg-muted/20 text-muted-foreground" : "bg-primary/10 text-primary"
             )}
           >
-            <FontAwesomeIcon icon={n.icon} size="xs" />
+            <span className="text-sm">•</span>
           </div>
           <div>
             <p className="text-xs font-medium text-foreground leading-relaxed">
-              {n.text}
+              {n.message}
             </p>
             <p className="text-[10px] text-muted-foreground mt-1 font-bold uppercase tracking-wider">
-              {n.time}
+              {n.timestamp}
             </p>
           </div>
         </div>
