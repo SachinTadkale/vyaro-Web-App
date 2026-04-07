@@ -76,17 +76,16 @@ const LoginForm = ({ switchToRegister }: Props) => {
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg("");
     if (!registrationNo && !password) {
-      setErrorMsg("Please enter both registration number and password.");
+      toast.error("Please enter details in both fields")
       return;
     }
     if (!registrationNo) {
-      setErrorMsg("Please enter your registration number.");
+      toast.error("Please enter your registration number.");
       return;
     }
     if (!password) {
-      setErrorMsg("Please enter your password.");
+      toast.error("Please enter your password.");
       return;
     }
     handleLogin();
@@ -154,16 +153,6 @@ const LoginForm = ({ switchToRegister }: Props) => {
           />
         </motion.div>
       </div>
-
-      {errorMsg && (
-        <motion.p
-          className="text-red-500 text-xs text-center font-medium bg-red-500/10 py-2 px-3 rounded border border-red-500/20 break-words whitespace-normal leading-relaxed"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
-          {errorMsg}
-        </motion.p>
-      )}
 
       {/* BUTTON */}
       <motion.button
