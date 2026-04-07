@@ -39,7 +39,6 @@ const LoginForm = ({ switchToRegister }: Props) => {
   const [showPassword, setShowPassword] = useState(false);
   const [registrationNo, setRegistrationNo] = useState("");
   const [password, setPassword] = useState("");
-  const [errorMsg, setErrorMsg] = useState("");
 
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
@@ -55,7 +54,7 @@ const LoginForm = ({ switchToRegister }: Props) => {
         navigate("/dashboard/company");
       }
     },
-    onError: (error: any) => {
+    onError: (error: { response?: { data?: { message?: string } }; message?: string }) => {
       let msg = error.response?.data?.message || error.message || "Invalid registration number or password";
       
       // Override "Invalid credentials" to "Incorrect password" based on user preference
@@ -69,7 +68,6 @@ const LoginForm = ({ switchToRegister }: Props) => {
       } else if (typeof msg === "string" && msg.length > 120) {
         msg = "An unexpected server error occurred. Please try again.";
       }
-      setErrorMsg(msg);
       toast.error(msg);
     },
   });

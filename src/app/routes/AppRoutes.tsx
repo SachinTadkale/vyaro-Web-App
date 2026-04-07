@@ -15,6 +15,12 @@ import LeadsPage from "@/features/dashboard/admin/pages/LeadsPage";
 
 // Company Pages
 import CompanyDashboard from "@/features/dashboard/company/pages/CompanyDashboard";
+import MarketplaceProductDetail from "@/features/dashboard/company/pages/MarketplaceProductDetail";
+import OrdersPage from "@/features/dashboard/company/pages/OrdersPage";
+import OrderDetailPage from "@/features/dashboard/company/pages/OrderDetailPage";
+import SettingsPage from "@/features/dashboard/company/pages/SettingsPage";
+import PaymentsPage from "@/features/dashboard/company/pages/PaymentsPage";
+import MessagesPage from "@/features/dashboard/company/pages/MessagesPage";
 
 const AppRoutes = () => {
   return (
@@ -43,7 +49,24 @@ const AppRoutes = () => {
         {/* COMPANY AREA */}
         <Route path="company" element={<DashboardLayout role="COMPANY" />}>
           <Route index element={<Navigate to="overview" replace />} />
+          <Route path="marketplace/:id" element={<MarketplaceProductDetail />} />
           <Route path=":tab" element={<CompanyDashboard />} />
+        </Route>
+      </Route>
+
+      <Route element={<ProtectedRoute allowedRoles={["COMPANY", "ADMIN"]} />}>
+        <Route path="/orders" element={<DashboardLayout role="COMPANY" />}>
+          <Route index element={<OrdersPage />} />
+          <Route path=":id" element={<OrderDetailPage />} />
+        </Route>
+        <Route path="/messages" element={<DashboardLayout role="COMPANY" />}>
+          <Route index element={<MessagesPage />} />
+        </Route>
+        <Route path="/payments" element={<DashboardLayout role="COMPANY" />}>
+          <Route index element={<PaymentsPage />} />
+        </Route>
+        <Route path="/settings" element={<DashboardLayout role="COMPANY" />}>
+          <Route index element={<SettingsPage />} />
         </Route>
       </Route>
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { getLeads, deleteLead, createLead } from "@/api/leads.api";
-import type { Lead } from "@/api/leads.api";
+import { getLeads, deleteLead, createLead } from "@/services/leads.api";
+import type { Lead } from "@/services/leads.api";
 import { toast } from "sonner";
 
 const LeadsPage = () => {
