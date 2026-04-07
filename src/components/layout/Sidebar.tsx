@@ -13,6 +13,10 @@ import {
   faBoxes,
   faBell,
   faUser,
+  faReceipt,
+  faCog,
+  faCreditCard,
+  faMessage,
 } from "@fortawesome/free-solid-svg-icons";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -41,10 +45,14 @@ const Sidebar = ({ role }: Props) => {
 
   const companyMenu = [
     { name: "Overview", path: "/dashboard/company/overview", icon: faChartLine },
+    { name: "Orders", path: "/orders", icon: faReceipt },
     { name: "Marketplace", path: "/dashboard/company/marketplace", icon: faStore },
     { name: "My Products", path: "/dashboard/company/products", icon: faBoxes },
+    { name: "Messages", path: "/messages", icon: faMessage },
+    { name: "Payments", path: "/payments", icon: faCreditCard },
     { name: "Notifications", path: "/dashboard/company/notifications", icon: faBell },
     { name: "Profile", path: "/dashboard/company/profile", icon: faUser },
+    { name: "Settings", path: "/settings", icon: faCog },
   ];
 
   const menuItems = role === "ADMIN" ? adminMenu : companyMenu;

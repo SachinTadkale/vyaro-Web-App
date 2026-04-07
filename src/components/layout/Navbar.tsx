@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBell, faUserCircle } from "@fortawesome/free-solid-svg-icons";
+import { faBell, faUserCircle, faSearch } from "@fortawesome/free-solid-svg-icons";
 import type { User } from "@/store/useAuthStore";
 import { cn } from "@/utils/utils";
 
@@ -9,9 +10,23 @@ type Props = {
   user: User | null;
 };
 
+const MOCK_SEARCH_DATA = [
+  { id: 1, name: "Premium Wheat", category: "Grain" },
+  { id: 2, name: "Basmati Rice", category: "Grain" },
+  { id: 3, name: "Soybean Oil", category: "Liquid" },
+  { id: 4, name: "Cotton Bales", category: "Textile" },
+  { id: 5, name: "Organic Turmeric", category: "Spice" }
+];
+
 const Navbar = ({ role, user }: Props) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showResults, setShowResults] = useState(false);
+
+  const filteredResults = MOCK_SEARCH_DATA.filter(p => 
+    searchQuery && (p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.category.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
   const getTitle = () => {
     const path = location.pathname;
@@ -59,8 +74,41 @@ const Navbar = ({ role, user }: Props) => {
         </p>
       </div>
 
-      {/* Action Icons */}
+      {/* Actions & Search */}
       <div className="flex items-center gap-4">
+        {/* Global Search */}
+        <div className="relative hidden md:block">
+          <div className="relative">
+            <FontAwesomeIcon icon={faSearch} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 w-3 h-3" />
+            <input 
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setShowResults(true); }}
+              onFocus={() => setShowResults(true)}
+              onBlur={() => setTimeout(() => setShowResults(false), 200)}
+              placeholder="Search mock products..." 
+              className="pl-8 pr-4 py-1.5 rounded-lg bg-muted/30 border border-transparent focus:border-primary/30 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 text-xs text-foreground transition-all w-64"
+            />
+          </div>
+          
+          {/* Search Dropdown */}
+          {showResults && searchQuery && (
+             <div className="absolute top-full mt-2 left-0 w-full bg-card border border-border shadow-lg rounded-xl overflow-hidden z-20">
+               {filteredResults.length > 0 ? (
+                 <div className="py-1">
+                   {filteredResults.map(p => (
+                     <div key={p.id} className="px-3 py-2 hover:bg-muted/50 cursor-pointer flex justify-between items-center transition-colors">
+                       <span className="text-xs font-bold text-foreground">{p.name}</span>
+                       <span className="text-[9px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded-md uppercase">{p.category}</span>
+                     </div>
+                   ))}
+                 </div>
+               ) : (
+                 <div className="p-3 text-center text-xs font-medium text-muted-foreground">No matches found</div>
+               )}
+             </div>
+          )}
+        </div>
+
         {/* Notifications */}
         <button
           className={cn(

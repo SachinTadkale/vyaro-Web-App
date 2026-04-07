@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchFarmerListingsAPI, fetchCompanyProfileAPI, updateCompanyProfileImageAPI, deleteCompanyProfileImageAPI } from "@/services/company.api";
+import { useQuery } from "@tanstack/react-query";
+import { fetchFarmerListingsAPI, fetchCompanyProfileAPI } from "@/services/company.api";
 import { useAuthStore } from "@/store/useAuthStore";
 import {
   Search,
@@ -17,12 +17,8 @@ import {
   Leaf,
   ShoppingCart,
   Bell,
-  Key,
-  Smartphone,
-  ShieldAlert,
   Edit,
-  Globe,
-  MapPin,
+  Landmark,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -41,6 +37,17 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/common/Tooltip";
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer
+} from "recharts";
 
 // ── Types ──────────────────────────────────────────────────
 export interface Product {
@@ -48,6 +55,7 @@ export interface Product {
   productName: string;
   category: string;
   unit: string;
+  stockQuantity: number;
 }
 
 export interface Notification {
@@ -57,6 +65,9 @@ export interface Notification {
   bg: string;
   text: string;
   time: string;
+  type: string;
+  isRead: boolean;
+  action?: string;
 }
 
 export interface FarmerListing {
@@ -69,6 +80,8 @@ export interface FarmerListing {
   price: string;
   createdAt: string;
   verified: boolean;
+  category: string;
+  priceValue: number;
 }
 
 type Tab =
@@ -80,18 +93,25 @@ type Tab =
 
 // ── Fallback Mocks ──────────────────────────────────────────
 const MOCK_PRODUCTS: Product[] = [
-  { productId: "1", productName: "Premium Wheat", category: "KG", unit: "Grain" },
-  { productId: "2", productName: "Basmati Rice", category: "KG", unit: "Grain" },
-  { productId: "3", productName: "Soybean Oil", category: "Litre", unit: "Liquid" },
-  { productId: "4", productName: "Cotton Bales", category: "Bundle", unit: "Textile" },
+  { productId: "1", productName: "Premium Wheat", category: "KG", unit: "Grain", stockQuantity: 500 },
+  { productId: "2", productName: "Basmati Rice", category: "KG", unit: "Grain", stockQuantity: 0 },
+  { productId: "3", productName: "Soybean Oil", category: "Litre", unit: "Liquid", stockQuantity: 100 },
+  { productId: "4", productName: "Cotton Bales", category: "Bundle", unit: "Textile", stockQuantity: 50 },
 ];
 
+const MOCK_CHART_DATA = [
+  { name: "Jan", orders: 45, revenue: 3200 },
+  { name: "Feb", orders: 52, revenue: 4100 },
+  { name: "Mar", orders: 38, revenue: 2900 },
+  { name: "Apr", orders: 65, revenue: 5800 },
+  { name: "May", orders: 48, revenue: 3700 },
+  { name: "Jun", orders: 74, revenue: 6900 },
+];
 
-
-const MOCK_NOTIFS = [
-  { id: 1, icon: CheckCircle, color: "text-primary", bg: "bg-primary/10", text: "Your account has been verified.", time: "2h ago" },
-  { id: 2, icon: Store, color: "text-blue-400", bg: "bg-blue-500/10", text: "New farmer listing — Organic Turmeric.", time: "4h ago" },
-  { id: 3, icon: AlertTriangle, color: "text-amber-400", bg: "bg-amber-500/10", text: "GST renewal due in 30 days.", time: "1d ago" },
+const MOCK_NOTIFS: Notification[] = [
+  { id: 1, icon: CheckCircle, color: "text-primary", bg: "bg-primary/10", text: "Your account has been verified.", time: "2h ago", type: "General", isRead: false },
+  { id: 2, icon: ShoppingCart, color: "text-blue-400", bg: "bg-blue-500/10", text: "New Order received for Premium Wheat.", time: "4h ago", type: "Orders", isRead: false, action: "View Order" },
+  { id: 3, icon: AlertTriangle, color: "text-amber-400", bg: "bg-amber-500/10", text: "GST renewal due in 30 days.", time: "1d ago", type: "Alerts", isRead: true },
 ];
 
 
@@ -104,12 +124,13 @@ const ProductModal = ({
 }: {
   open: boolean;
   onClose: () => void;
-  onSave: (d: { productName: string; category: string; unit: string }) => void;
+  onSave: (d: { productName: string; category: string; unit: string; stockQuantity: number }) => void;
   initial?: Product | null;
 }) => {
   const [name, setName] = useState(initial?.productName ?? "");
   const [cat, setCat] = useState(initial?.category ?? "");
   const [unit, setUnit] = useState(initial?.unit ?? "");
+  const [qty, setQty] = useState((initial?.stockQuantity ?? 0).toString());
 
   if (!open) return null;
 
@@ -132,10 +153,14 @@ const ProductModal = ({
             <label className="block text-xs font-semibold mb-1.5 text-muted-foreground uppercase tracking-widest">Unit</label>
             <input className={inputCls} value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="e.g. KG" />
           </div>
+          <div>
+            <label className="block text-xs font-semibold mb-1.5 text-muted-foreground uppercase tracking-widest">Stock Quantity</label>
+            <input type="number" min="0" className={inputCls} value={qty} onChange={(e) => setQty(e.target.value)} placeholder="e.g. 100" />
+          </div>
         </div>
         <div className="flex gap-2.5 mt-6">
           <button onClick={onClose} className="flex-1 rounded-xl py-2.5 text-sm font-semibold border border-border text-muted-foreground hover:bg-muted transition-colors">Cancel</button>
-          <button onClick={() => { if (name && cat && unit) onSave({ productName: name, category: cat, unit }); onClose(); }} className="flex-1 bg-primary text-primary-foreground font-bold rounded-xl py-2.5 text-sm hover:bg-primary/90 transition-colors">Save</button>
+          <button onClick={() => { if (name && cat && unit) onSave({ productName: name, category: cat, unit, stockQuantity: parseInt(qty) || 0 }); onClose(); }} className="flex-1 bg-primary text-primary-foreground font-bold rounded-xl py-2.5 text-sm hover:bg-primary/90 transition-colors">Save</button>
         </div>
       </motion.div>
     </div>
@@ -181,14 +206,12 @@ const ProcureModal = ({
 const CompanyDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const user = useAuthStore(state => state.user);
-  const updateUser = useAuthStore(state => state.updateUser);
+
   const [modalOpen, setModalOpen] = useState(false);
   const [procureListing, setProcureListing] = useState<FarmerListing | null>(null);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [search, setSearch] = useState("");
-  const [showImageMenu, setShowImageMenu] = useState(false);
 
   const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
   
@@ -218,45 +241,10 @@ const CompanyDashboard = () => {
     enabled: tab === "profile",
   });
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const uploadImageMutation = useMutation({
-    mutationFn: updateCompanyProfileImageAPI,
-    onSuccess: (res) => {
-      queryClient.invalidateQueries({ queryKey: ["companyProfile"] });
-      if (res.data?.profileImageUrl) {
-        updateUser({ profileImageUrl: res.data.profileImageUrl });
-        toast.success("Profile Image updated successfully!");
-      }
-    },
-    onError: (err) => {
-      console.error("Upload failed", err);
-      toast.error("Failed to upload image.");
-    }
-  });
-
-  const deleteImageMutation = useMutation({
-    mutationFn: deleteCompanyProfileImageAPI,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["companyProfile"] });
-      updateUser({ profileImageUrl: undefined });
-      setShowImageMenu(false);
-      toast.info("Profile Image removed.");
-    },
-    onError: (err) => {
-      console.error("Delete failed", err);
-      toast.error("Failed to delete image.");
-    }
-  });
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      uploadImageMutation.mutate(file);
-      setShowImageMenu(false);
-    }
-  };
-
   const [marketplaceSearch, setMarketplaceSearch] = useState("");
+  const [filterLocation, setFilterLocation] = useState("All");
+  const [filterCategory, setFilterCategory] = useState("All");
+  const [filterPrice, setFilterPrice] = useState("All");
 
   const farmerListings: FarmerListing[] = farmerListingsData?.data 
     ? farmerListingsData.data.map((listing: any) => {
@@ -272,18 +260,50 @@ const CompanyDashboard = () => {
           price: `₹${listing.price} / ${pUnit || "unit"}`,
           createdAt: new Date(listing.createdAt || new Date()).toLocaleDateString(),
           verified: true,
+          category: listing.product?.category || "Uncategorized",
+          priceValue: listing.price || 0,
         };
       })
     : []; // No more fallback to MOCK_FARMERS
 
+  // Extract unique filter options
+  const uniqueLocations = Array.from(new Set(farmerListings.map(fl => fl.location.split(",")[0].trim()))).filter(Boolean).sort();
+  const uniqueCategories = Array.from(new Set(farmerListings.map(fl => fl.category))).filter(Boolean).sort();
+
   const filteredFarmerListings = farmerListings.filter(fl => {
+    // 1. Search
     const q = marketplaceSearch.toLowerCase();
-    return fl.produce.toLowerCase().includes(q) || fl.farmer.toLowerCase().includes(q) || fl.location.toLowerCase().includes(q);
+    const matchSearch = !q || fl.produce.toLowerCase().includes(q) || fl.farmer.toLowerCase().includes(q) || fl.location.toLowerCase().includes(q);
+
+    // 2. Location
+    const locPrefix = fl.location.split(",")[0].trim();
+    const matchLocation = filterLocation === "All" || locPrefix === filterLocation;
+
+    // 3. Category
+    const matchCategory = filterCategory === "All" || fl.category === filterCategory;
+
+    // 4. Price
+    let matchPrice = true;
+    if (filterPrice === "Under ₹500") matchPrice = fl.priceValue < 500;
+    else if (filterPrice === "₹500 - ₹2000") matchPrice = fl.priceValue >= 500 && fl.priceValue <= 2000;
+    else if (filterPrice === "Above ₹2000") matchPrice = fl.priceValue > 2000;
+
+    return matchSearch && matchLocation && matchCategory && matchPrice;
   });
 
-  const notifications = MOCK_NOTIFS;
+  const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFS);
+  const [notifFilter, setNotifFilter] = useState("All");
 
-  const handleSave = (data: { productName: string; category: string; unit: string }) => {
+  const markAsRead = (id: number) => {
+    setNotifications(old => old.map(n => n.id === id ? { ...n, isRead: true } : n));
+  };
+  const markAllAsRead = () => {
+    setNotifications(old => old.map(n => ({ ...n, isRead: true })));
+  };
+
+  const filteredNotifications = notifications.filter(n => notifFilter === "All" || n.type === notifFilter);
+
+  const handleSave = (data: { productName: string; category: string; unit: string; stockQuantity: number }) => {
     if (editProduct) {
       setProducts(old => old.map(p => p.productId === editProduct.productId ? { ...p, ...data } : p));
     } else {
@@ -359,6 +379,37 @@ const CompanyDashboard = () => {
               ))}
             </div>
 
+            <div className="grid lg:grid-cols-2 gap-8">
+              <div className="bg-card border border-border rounded-xl p-5 shadow-sm space-y-4">
+                <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground">Orders Over Time</h3>
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={MOCK_CHART_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="opacity-10" vertical={false} />
+                      <XAxis dataKey="name" stroke="currentColor" className="text-[10px] uppercase font-bold opacity-50 tracking-widest" tickLine={false} axisLine={false} />
+                      <YAxis stroke="currentColor" className="text-[10px] font-bold opacity-50" tickLine={false} axisLine={false} />
+                      <RechartsTooltip cursor={{ stroke: 'currentColor', strokeWidth: 1, strokeDasharray: '3 3', opacity: 0.2 }} contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '0.75rem', fontSize: '12px', fontWeight: 'bold' }} itemStyle={{ color: 'hsl(var(--primary))' }} />
+                      <Line type="monotone" dataKey="orders" stroke="hsl(var(--primary))" strokeWidth={3} dot={{ r: 4, fill: 'hsl(var(--card))', stroke: 'hsl(var(--primary))', strokeWidth: 2 }} activeDot={{ r: 6, fill: 'hsl(var(--primary))' }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              <div className="bg-card border border-border rounded-xl p-5 shadow-sm space-y-4">
+                <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground">Revenue Trends (₹)</h3>
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={MOCK_CHART_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="opacity-10" vertical={false} />
+                      <XAxis dataKey="name" stroke="currentColor" className="text-[10px] uppercase font-bold opacity-50 tracking-widest" tickLine={false} axisLine={false} />
+                      <YAxis stroke="currentColor" className="text-[10px] font-bold opacity-50" tickLine={false} axisLine={false} />
+                      <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '0.75rem', fontSize: '12px', fontWeight: 'bold' }} itemStyle={{ color: 'hsl(var(--primary))' }} />
+                      <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+
             <div className="grid lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 space-y-4">
                 <div className="flex items-center justify-between">
@@ -417,9 +468,25 @@ const CompanyDashboard = () => {
 
         {tab === "marketplace" && (
           <motion.div key="marketplace" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-              <input className="w-full bg-card border border-border pl-12 pr-4 py-3 rounded-2xl text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary shadow-sm" value={marketplaceSearch} onChange={(e) => setMarketplaceSearch(e.target.value)} placeholder="Search farmers, produce, locations..." />
+            <div className="flex flex-col md:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                <input className="w-full bg-card border border-border pl-12 pr-4 py-3 rounded-2xl text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary shadow-sm" value={marketplaceSearch} onChange={(e) => setMarketplaceSearch(e.target.value)} placeholder="Search farmers, produce, locations..." />
+              </div>
+              <select className="bg-card border border-border rounded-2xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary shadow-sm cursor-pointer min-w-[150px]" value={filterCategory} onChange={e => setFilterCategory(e.target.value)}>
+                <option value="All">All Categories</option>
+                {uniqueCategories.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <select className="bg-card border border-border rounded-2xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary shadow-sm cursor-pointer min-w-[150px]" value={filterLocation} onChange={e => setFilterLocation(e.target.value)}>
+                <option value="All">All Locations</option>
+                {uniqueLocations.map(l => <option key={l} value={l}>{l}</option>)}
+              </select>
+              <select className="bg-card border border-border rounded-2xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary shadow-sm cursor-pointer min-w-[150px]" value={filterPrice} onChange={e => setFilterPrice(e.target.value)}>
+                <option value="All">Any Price</option>
+                <option value="Under ₹500">Under ₹500</option>
+                <option value="₹500 - ₹2000">₹500 - ₹2000</option>
+                <option value="Above ₹2000">Above ₹2000</option>
+              </select>
             </div>
             <div className="dashboard-card overflow-hidden">
               <Table>
@@ -455,10 +522,13 @@ const CompanyDashboard = () => {
                   ) : filteredFarmerListings.map(fl => (
                     <TableRow key={fl.id} className="group hover:bg-muted/50">
                       <TableCell className="py-4 px-4 text-left">
-                        <div className="flex items-center gap-3">
+                        <div
+                          className="flex items-center gap-3 cursor-pointer"
+                          onClick={() => navigate(`/dashboard/company/marketplace/${fl.id}`)}
+                        >
                           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary flex-shrink-0"><Leaf size={16} /></div>
                           <div className="flex flex-col">
-                            <span className="text-[13px] font-black text-foreground">{fl.produce}</span>
+                            <span className="text-[13px] font-black text-foreground group-hover:text-primary transition-colors">{fl.produce}</span>
                             {fl.verified && <span className="text-[9px] font-black text-primary uppercase italic tracking-widest mt-0.5">Verified Farmer</span>}
                           </div>
                         </div>
@@ -504,6 +574,8 @@ const CompanyDashboard = () => {
                     <TableHead className="text-xs uppercase font-black tracking-widest">Product</TableHead>
                     <TableHead className="text-xs uppercase font-black tracking-widest">Category</TableHead>
                     <TableHead className="text-xs uppercase font-black tracking-widest">Unit</TableHead>
+                    <TableHead className="text-center text-xs uppercase font-black tracking-widest">Stock</TableHead>
+                    <TableHead className="text-center text-xs uppercase font-black tracking-widest">Status</TableHead>
                     <TableHead className="text-right text-xs uppercase font-black tracking-widest">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -520,6 +592,14 @@ const CompanyDashboard = () => {
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted border border-border">{p.category}</span>
                       </TableCell>
                       <TableCell className="py-3 text-xs text-muted-foreground">{p.unit}</TableCell>
+                      <TableCell className="py-3 text-center text-sm font-black text-foreground">{p.stockQuantity}</TableCell>
+                      <TableCell className="py-3 text-center">
+                        {p.stockQuantity > 0 ? (
+                          <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-green-500/10 text-green-500 border border-green-500/20 uppercase tracking-widest">Active</span>
+                        ) : (
+                          <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-destructive/10 text-destructive border border-destructive/20 uppercase tracking-widest">Out of Stock</span>
+                        )}
+                      </TableCell>
                       <TableCell className="py-3 text-right"><ActionButtons onEdit={() => openEdit(p)} onDelete={() => handleDelete(p.productId)} /></TableCell>
                     </TableRow>
                   ))}
@@ -530,37 +610,76 @@ const CompanyDashboard = () => {
         )}
 
         {tab === "notifications" && (
-          <motion.div key="notifications" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="bg-card border border-border rounded-xl divide-y divide-border overflow-hidden shadow-sm">
-            {notifications.map(n => (
-              <div key={n.id} className="flex gap-4 p-5 hover:bg-muted/30 transition-colors">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${n.bg}`}>
-                  <n.icon size={18} className={n.color} />
-                </div>
-                <div>
-                  <p className="text-foreground font-semibold leading-normal">{n.text}</p>
-                  <p className="text-xs text-muted-foreground mt-1 lowercase first-letter:uppercase">{n.time}</p>
-                </div>
+          <motion.div key="notifications" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex gap-2">
+                {["All", "Orders", "Alerts", "General"].map(filter => (
+                  <button 
+                    key={filter} 
+                    onClick={() => setNotifFilter(filter)}
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${notifFilter === filter ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                  >
+                    {filter}
+                  </button>
+                ))}
               </div>
-            ))}
+              <button 
+                onClick={markAllAsRead}
+                className="text-primary text-[11px] font-bold hover:underline tracking-widest uppercase"
+              >
+                Mark all as read
+              </button>
+            </div>
+            
+            <div className="bg-card border border-border rounded-xl divide-y divide-border overflow-hidden shadow-sm">
+              {filteredNotifications.map(n => (
+                <div key={n.id} className={`flex gap-4 p-5 transition-colors ${n.isRead ? 'opacity-60 bg-transparent' : 'bg-muted/10'}`}>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${n.bg}`}>
+                    <n.icon size={18} className={n.color} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-foreground font-semibold leading-normal">{n.text}</p>
+                    <p className="text-xs text-muted-foreground mt-1 lowercase first-letter:uppercase">{n.time}</p>
+                    {n.action && (
+                      <button className="mt-3 text-[11px] font-bold bg-primary/10 text-primary px-3 py-1.5 rounded-lg hover:bg-primary/20 transition-colors uppercase tracking-widest">
+                        {n.action}
+                      </button>
+                    )}
+                  </div>
+                  {!n.isRead && (
+                    <button onClick={() => markAsRead(n.id)} className="w-8 h-8 rounded-full hover:bg-muted flex items-center justify-center text-muted-foreground flex-shrink-0 transition-colors" title="Mark as read">
+                      <CheckCircle size={16} />
+                    </button>
+                  )}
+                </div>
+              ))}
+              {filteredNotifications.length === 0 && (
+                <div className="p-8 text-center text-muted-foreground text-sm font-medium">No {notifFilter.toLowerCase()} notifications.</div>
+              )}
+            </div>
           </motion.div>
         )}
 
         {tab === "profile" && (
-          <motion.div key="profile" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="grid md:grid-cols-2 gap-5">
-            <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden flex flex-col">
-              {isLoadingProfile ? (
-                 <div className="p-5"><p className="text-sm text-muted-foreground animate-pulse font-medium">Loading profile data...</p></div>
-              ) : (
-                <>
-                  {/* SaaS Banner */}
-                  <div className="h-28 w-full bg-gradient-to-r from-primary/20 via-primary/5 to-transparent relative"></div>
-                  
-                  <div className="px-6 pb-6 relative -mt-12">
-                    <div className="flex items-end gap-5 mb-6">
+          <motion.div key="profile" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="grid md:grid-cols-3 gap-6">
+            
+            {/* Left Column - Main Details */}
+            <div className="md:col-span-2 space-y-6">
+              
+              {/* Header Card */}
+              <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden flex flex-col">
+                {isLoadingProfile ? (
+                   <div className="p-5"><p className="text-sm text-muted-foreground animate-pulse font-medium">Loading profile data...</p></div>
+                ) : (
+                  <>
+                    {/* SaaS Banner */}
+                    <div className="h-32 w-full bg-gradient-to-r from-primary/20 via-primary/5 to-transparent relative"></div>
+                    
+                    <div className="px-8 pb-8 relative -mt-12 flex flex-col sm:flex-row items-end gap-6 border-b border-border/50">
                       <div className="relative">
                         {/* Profile Image Bubble */}
-                        <div className="w-24 h-24 rounded-2xl bg-card p-1.5 border border-border shadow-sm relative z-10">
-                          <div className="w-full h-full rounded-xl bg-primary/10 flex items-center justify-center text-3xl font-black text-primary overflow-hidden">
+                        <div className="w-28 h-28 rounded-2xl bg-card p-1.5 border border-border shadow-sm relative z-10">
+                          <div className="w-full h-full rounded-xl bg-primary/10 flex items-center justify-center text-4xl font-black text-primary overflow-hidden">
                             {profileData?.data?.profileImageUrl ? (
                               <img src={profileData.data.profileImageUrl} alt="Company Logo" className="w-full h-full object-cover" />
                             ) : (
@@ -568,127 +687,164 @@ const CompanyDashboard = () => {
                             )}
                           </div>
                         </div>
-                        
-                        {/* Edit Icon (Bottom Right, Half Overlapping) */}
-                        <div 
-                          onClick={() => setShowImageMenu(!showImageMenu)}
-                          className="absolute -bottom-2 -right-2 w-8 h-8 bg-background rounded-full flex items-center justify-center cursor-pointer z-30 shadow-md border border-border hover:bg-muted transition-colors"
-                          title="Edit Options"
-                        >
-                          <Pencil size={13} className="text-foreground" />
-                        </div>
-                        
-                        {/* Dropdown Menu */}
-                        {showImageMenu && (
-                          <div className="absolute top-full left-full mt-2 -ml-6 w-40 bg-card border border-border rounded-xl shadow-xl z-50 py-1 overflow-hidden" onMouseLeave={() => setShowImageMenu(false)}>
-                            <button 
-                              onClick={() => { setShowImageMenu(false); fileInputRef.current?.click(); }}
-                              className="w-full text-left px-4 py-2.5 text-xs font-bold text-foreground hover:bg-muted transition-colors"
-                            >
-                              Update picture
-                            </button>
-                            {profileData?.data?.profileImageUrl && (
-                              <button 
-                                onClick={() => { setShowImageMenu(false); deleteImageMutation.mutate(); }}
-                                className="w-full text-left px-4 py-2.5 text-xs font-bold text-destructive hover:bg-destructive/10 transition-colors"
-                              >
-                                Delete picture
-                              </button>
-                            )}
-                          </div>
-                        )}
-                        
-                        <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
-                        {uploadImageMutation.isPending && (
-                          <div className="absolute inset-0 bg-black/50 rounded-2xl flex items-center justify-center z-40 backdrop-blur-sm">
-                            <span className="w-6 h-6 rounded-full border-2 border-white/40 border-t-white animate-spin"></span>
-                          </div>
-                        )}
                       </div>
                       
-                      <div className="pb-1">
-                        <h3 className="text-xl font-bold text-foreground leading-tight tracking-tight">{profileData?.data?.companyName || user?.companyName || user?.name || "Unknown Company"}</h3>
-                        <p className="text-xs text-muted-foreground mt-0.5">{profileData?.data?.email || user?.email}</p>
-                        <div className="mt-2.5 flex items-center gap-2">
-                          <span className="bg-primary/15 text-primary text-[10px] font-bold px-2.5 py-1 rounded-full uppercase flex items-center gap-1.5 border border-primary/20">
-                            <ShieldCheck size={12} /> {profileData?.data?.verification === 'VERIFIED' ? 'Verified Company' : 'Pending Verification'}
-                          </span>
+                      <div className="flex-1 pb-1">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div>
+                            <h3 className="text-2xl font-black text-foreground leading-tight tracking-tight">{profileData?.data?.companyName || user?.companyName || user?.name || "Unknown Company"}</h3>
+                            <p className="text-sm text-muted-foreground mt-0.5">{profileData?.data?.email || user?.email}</p>
+                          </div>
+                          <div>
+                            {profileData?.data?.verification === 'VERIFIED' ? (
+                              <span className="bg-green-500/10 text-green-500 text-xs font-bold px-3 py-1.5 rounded-full uppercase flex items-center gap-2 border border-green-500/20 shadow-sm whitespace-nowrap">
+                                <ShieldCheck size={14} /> Verified Business
+                              </span>
+                            ) : (
+                              <span className="bg-amber-500/10 text-amber-500 text-xs font-bold px-3 py-1.5 rounded-full uppercase flex items-center gap-2 border border-amber-500/20 shadow-sm whitespace-nowrap">
+                                <AlertTriangle size={14} /> Pending Verification
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                    
-                    <div className="space-y-2 pt-2">
-                      {[
-                        ["GST Number", profileData?.data?.gstNumber || "N/A"], 
-                        ["Registration", profileData?.data?.registrationNo || "N/A"], 
-                        ["Head Office", profileData?.data?.hqLocation || "N/A"],
-                        ["Support Phone", "+91 98765 43210"],
-                        ["Website", "www.farmzy-example.com"]
-                      ].map(([k, v]) => (
-                        <div key={k} className="flex justify-between py-3 border-b border-border/50 last:border-0 items-center">
-                          <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{k}</span>
-                          <span className="text-xs font-bold text-foreground bg-muted/40 px-3 py-1.5 rounded-lg border border-border/30">{v}</span>
+
+                    {/* Contact & Business Info Split */}
+                    <div className="grid sm:grid-cols-2 gap-6 p-8">
+                      <div className="space-y-4">
+                        <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center justify-between">
+                          Business Details
+                        </h4>
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-[10px] uppercase font-bold text-muted-foreground">GST Number</p>
+                            <p className="text-sm font-semibold text-foreground">{profileData?.data?.gstNumber || "Not Provided"}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] uppercase font-bold text-muted-foreground">Registration No.</p>
+                            <p className="text-sm font-semibold text-foreground">{profileData?.data?.registrationNo || "Not Provided"}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] uppercase font-bold text-muted-foreground">HQ Location</p>
+                            <p className="text-sm font-medium text-foreground">{profileData?.data?.hqLocation || "No address defined"}</p>
+                          </div>
                         </div>
-                      ))}
+                      </div>
+
+                      <div className="space-y-4">
+                        <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center justify-between">
+                          Contact Info
+                          <button onClick={() => toast.info("Settings module controls contact info.")} className="text-primary hover:underline flex items-center gap-1"><Edit size={10} /> Edit</button>
+                        </h4>
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-[10px] uppercase font-bold text-muted-foreground">Support Phone</p>
+                            <p className="text-sm font-semibold text-foreground">+91 98765 43210</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] uppercase font-bold text-muted-foreground">Admin Email</p>
+                            <p className="text-sm font-semibold text-foreground">{profileData?.data?.email || user?.email}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] uppercase font-bold text-muted-foreground">Website</p>
+                            <p className="text-sm font-medium text-primary hover:underline cursor-pointer">www.farmzy-example.com</p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </>
-              )}
+                  </>
+                )}
+              </div>
+
+              {/* Bank Details Card */}
+              <div className="bg-card border border-border rounded-2xl p-8 shadow-sm">
+                 <div className="flex items-center justify-between mb-6">
+                    <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                       <Landmark size={14} className="text-foreground" /> Bank Settlement Details
+                    </h4>
+                    <button onClick={() => toast.info("Settings module controls bank info.")} className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1">
+                      <Edit size={10} /> Edit
+                    </button>
+                 </div>
+                 
+                 <div className="grid sm:grid-cols-2 gap-6 bg-muted/20 p-5 rounded-xl border border-border/50">
+                    <div>
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground">Account Name</p>
+                      <p className="text-sm font-bold text-foreground mt-0.5">{profileData?.data?.companyName || user?.companyName || user?.name || "FarmZY Business"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground">Bank Name</p>
+                      <p className="text-sm font-bold text-foreground mt-0.5">HDFC Bank Ltd.</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground">Account Number</p>
+                      <p className="text-sm font-mono font-bold text-foreground mt-0.5">•••• •••• •••• 4589</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground">IFSC Code</p>
+                      <p className="text-sm font-mono font-bold text-foreground mt-0.5">HDFC0••••••</p>
+                    </div>
+                 </div>
+              </div>
+
             </div>
-            <div className="flex flex-col gap-5">
-              <div className="bg-card border border-border rounded-2xl p-6 shadow-sm flex-1">
+
+            {/* Right Column - Sidebar Widgets */}
+            <div className="md:col-span-1 space-y-6">
+              
+              {/* Account Metrics Card */}
+              <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
+                <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-5">Account Metrics</h4>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center p-3 rounded-xl bg-muted/20 border border-border/50">
+                    <span className="text-xs font-semibold text-muted-foreground flex items-center gap-2"><ShoppingCart size={14} /> Total Orders</span>
+                    <span className="text-sm font-black text-foreground">1,248</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 rounded-xl bg-muted/20 border border-border/50">
+                    <span className="text-xs font-semibold text-muted-foreground flex items-center gap-2"><Boxes size={14} /> Active Listings</span>
+                    <span className="text-sm font-black text-foreground">14</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 rounded-xl bg-primary/5 border border-primary/20 hover:bg-primary/10 transition-colors cursor-pointer">
+                    <span className="text-xs font-semibold text-primary flex items-center gap-2"><Store size={14} /> Revenue (YTD)</span>
+                    <span className="text-sm font-black text-primary">₹12.4M</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Compliance & Verification Card */}
+              <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-5">
                   <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Compliance Status</h4>
-                  <button className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1">
-                    <Edit size={12} /> Manage
-                  </button>
                 </div>
                 
                 <div className="space-y-4">
                   {[
                     { label: "GST Certificate", status: "Verified", icon: FileCheck, color: "text-green-500", bg: "bg-green-500/10" },
                     { label: "Business License", status: "Verified", icon: Store, color: "text-green-500", bg: "bg-green-500/10" },
-                    { label: "KYC Status", status: "Approved", icon: ShieldCheck, color: "text-primary", bg: "bg-primary/10" }
+                    { label: "KYC Documents", status: "Approved", icon: ShieldCheck, color: "text-primary", bg: "bg-primary/10" }
                   ].map((item, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 rounded-xl border border-border/50 bg-muted/20 hover:bg-muted/40 transition-colors">
+                    <div key={i} className="flex flex-col gap-2 p-3 rounded-xl border border-border/50 bg-muted/10 hover:bg-muted/30 transition-colors">
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${item.bg}`}>
                           <item.icon size={14} className={item.color} />
                         </div>
-                        <span className="text-sm font-semibold text-foreground">{item.label}</span>
+                        <span className="text-xs font-bold text-foreground">{item.label}</span>
                       </div>
-                      <span className="bg-primary/10 text-primary text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 uppercase border border-primary/20"><CheckCircle size={10} /> {item.status}</span>
+                      <div className="flex items-center gap-1.5 mt-1 ml-[44px]">
+                        <CheckCircle size={12} className={item.color} />
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${item.color}`}>{item.status}</span>
+                      </div>
                     </div>
                   ))}
                 </div>
+                <button onClick={() => toast.info("Document viewer mockup.")} className="w-full mt-4 text-xs font-bold text-primary border border-primary/20 bg-primary/5 py-2.5 rounded-xl hover:bg-primary/10 transition-colors">
+                  View Uploaded Documents
+                </button>
               </div>
 
-              <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
-                <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-5">Account & Security</h4>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 rounded-xl border border-border/50 hover:bg-muted/30 transition-colors cursor-pointer group">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground group-hover:text-foreground transition-colors"><Key size={14} /></div>
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">Password</p>
-                        <p className="text-[10px] text-muted-foreground">Last changed 3 months ago</p>
-                      </div>
-                    </div>
-                    <button className="text-xs font-bold text-foreground border border-border px-3 py-1.5 rounded-lg hover:bg-muted">Change</button>
-                  </div>
-                  <div className="flex items-center justify-between p-3 rounded-xl border border-border/50 hover:bg-muted/30 transition-colors cursor-pointer group">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-500"><Smartphone size={14} /></div>
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">Two-Factor Authentication</p>
-                        <p className="text-[10px] text-muted-foreground">Not configured</p>
-                      </div>
-                    </div>
-                    <button className="text-xs font-bold text-orange-500 border border-orange-500/20 px-3 py-1.5 rounded-lg hover:bg-orange-500/10">Enable</button>
-                  </div>
-                </div>
-              </div>
             </div>
+
           </motion.div>
         )}
       </AnimatePresence>
