@@ -48,7 +48,6 @@ import {
   Tooltip as RechartsTooltip,
   ResponsiveContainer
 } from "recharts";
-import { Skeleton } from "@/components/ui/skeleton";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser } from "@fortawesome/free-solid-svg-icons";
 
@@ -679,47 +678,6 @@ const CompanyDashboard = () => {
                     <div className="h-32 w-full bg-gradient-to-r from-primary/20 via-primary/5 to-transparent relative"></div>
                     
                     <div className="px-8 pb-8 relative -mt-12 flex flex-col sm:flex-row items-end gap-6 border-b border-border/50">
-          <motion.div key="profile" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="grid md:grid-cols-2 gap-5">
-            <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden flex flex-col">
-              {isLoadingProfile ? (
-                <>
-                  <div className="h-28 w-full bg-gradient-to-r from-primary/10 via-primary/5 to-transparent relative">
-                    <Skeleton className="absolute inset-0 rounded-none bg-white/30" />
-                  </div>
-
-                  <div className="px-6 pb-6 relative -mt-12">
-                    <div className="flex items-end gap-5 mb-6">
-                      <div className="relative">
-                        <div className="w-24 h-24 rounded-2xl bg-card p-1.5 border border-border shadow-sm relative z-10">
-                          <Skeleton className="w-full h-full rounded-xl bg-primary/10" />
-                        </div>
-                        {/* <Skeleton className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full border border-border shadow-md z-20" /> */}
-                      </div>
-                    </div>
-
-                    <div className="space-y-2 pt-2">
-                      {[
-                        "5rem",
-                        "6rem",
-                        "7rem",
-                        "8rem",
-                        "10rem",
-                      ].map((valueWidth, index) => (
-                        <div key={index} className="flex justify-between py-3 border-b border-border/50 last:border-0 items-center gap-4">
-                          <Skeleton className="h-3 w-24" />
-                          <Skeleton className="h-8 rounded-lg" style={{ width: valueWidth }} />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  {/* SaaS Banner */}
-                  <div className="h-28 w-full bg-gradient-to-r from-primary/20 via-primary/5 to-transparent relative"></div>
-                  
-                  <div className="px-6 pb-6 relative -mt-12">
-                    <div className="flex items-end gap-5 mb-6">
                       <div className="relative">
                         {/* Profile Image Bubble */}
                         <div className="w-28 h-28 rounded-2xl bg-card p-1.5 border border-border shadow-sm relative z-10">
@@ -757,9 +715,7 @@ const CompanyDashboard = () => {
                     {/* Contact & Business Info Split */}
                     <div className="grid sm:grid-cols-2 gap-6 p-8">
                       <div className="space-y-4">
-                        <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center justify-between">
-                          Business Details
-                        </h4>
+                        <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Business Details</h4>
                         <div className="space-y-3">
                           <div>
                             <p className="text-[10px] uppercase font-bold text-muted-foreground">GST Number</p>
@@ -800,7 +756,6 @@ const CompanyDashboard = () => {
                   </>
                 )}
               </div>
-
               {/* Bank Details Card */}
               <div className="bg-card border border-border rounded-2xl p-8 shadow-sm">
                  <div className="flex items-center justify-between mb-6">
