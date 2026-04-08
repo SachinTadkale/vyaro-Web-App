@@ -1,4 +1,5 @@
 export type LeadRole = "FARMER" | "COMPANY";
+export type LeadStatus = "NEW" | "CONTACTED" | "CONVERTED";
 
 export interface Lead {
   id: string;
@@ -6,4 +7,6 @@ export interface Lead {
   role: LeadRole;
   name?: string | null;
   createdAt: string;
+  status?: LeadStatus;
+  notes?: string;
 }
