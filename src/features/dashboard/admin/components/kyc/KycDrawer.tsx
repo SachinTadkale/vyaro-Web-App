@@ -7,7 +7,7 @@ type Props = {
   type: "farmers" | "companies";
   data: any;
   onApprove: (id: string) => void;
-  onReject: (id: string) => void;
+  onReject: (id: string, reason?: string) => void;
   onBlock?: (id: string) => void;
   onViewDoc: (src: string, title: string) => void;
   isProcessing?: boolean;
@@ -38,7 +38,7 @@ const KycDrawer = ({
         data={data}
         onViewDoc={onViewDoc}
         onApprove={() => onApprove(data.id)}
-        onReject={() => onReject(data.id)}
+        onReject={(reason?: string) => onReject(data.id, reason)}
         onBlock={onBlock ? () => onBlock(data.id) : undefined}
         isProcessing={isProcessing}
       />
