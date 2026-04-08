@@ -12,6 +12,13 @@ import KycPage from "@/features/dashboard/admin/pages/KycPage";
 import UsersPage from "@/features/dashboard/admin/pages/UsersPage";
 import CompaniesPage from "@/features/dashboard/admin/pages/CompaniesPage";
 import LeadsPage from "@/features/dashboard/admin/pages/LeadsPage";
+import AdminSettingsPage from "@/features/auth/pages/AdminSettingsPage";
+import AdminOrdersPage from "@/features/dashboard/admin/pages/AdminOrdersPage";
+import AdminListingsPage from "@/features/dashboard/admin/pages/AdminListingsPage";
+import AdminTransactionsPage from "@/features/dashboard/admin/pages/AdminTransactionsPage";
+import AdminNotificationsPage from "@/features/dashboard/admin/pages/AdminNotificationsPage";
+import AdminDisputesPage from "@/features/dashboard/admin/pages/AdminDisputesPage";
+import AdminAuditLogsPage from "@/features/dashboard/admin/pages/AdminAuditLogsPage";
 
 // Company Pages
 import CompanyDashboard from "@/features/dashboard/company/pages/CompanyDashboard";
@@ -21,6 +28,7 @@ import OrderDetailPage from "@/features/dashboard/company/pages/OrderDetailPage"
 import SettingsPage from "@/features/dashboard/company/pages/SettingsPage";
 import PaymentsPage from "@/features/dashboard/company/pages/PaymentsPage";
 import MessagesPage from "@/features/dashboard/company/pages/MessagesPage";
+import OrderSuccessPage from "@/features/dashboard/company/pages/OrderSuccessPage";
 
 const AppRoutes = () => {
   return (
@@ -43,12 +51,20 @@ const AppRoutes = () => {
           <Route path="kyc" element={<KycPage />} />
           <Route path="users" element={<UsersPage />} />
           <Route path="companies" element={<CompaniesPage />} />
+          <Route path="orders" element={<AdminOrdersPage />} />
+          <Route path="listings" element={<AdminListingsPage />} />
+          <Route path="transactions" element={<AdminTransactionsPage />} />
+          <Route path="notifications" element={<AdminNotificationsPage />} />
+          <Route path="disputes" element={<AdminDisputesPage />} />
+          <Route path="logs" element={<AdminAuditLogsPage />} />
           <Route path="leads" element={<LeadsPage />} />
+          <Route path="settings" element={<AdminSettingsPage />} />
         </Route>
 
         {/* COMPANY AREA */}
         <Route path="company" element={<DashboardLayout role="COMPANY" />}>
           <Route index element={<Navigate to="overview" replace />} />
+          <Route path="order-success" element={<OrderSuccessPage />} />
           <Route path="marketplace/:id" element={<MarketplaceProductDetail />} />
           <Route path=":tab" element={<CompanyDashboard />} />
         </Route>

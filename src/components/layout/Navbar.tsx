@@ -1,8 +1,10 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBell, faUserCircle, faSearch } from "@fortawesome/free-solid-svg-icons";
+import { faBell, faUserCircle, faSearch, faSignOutAlt, faCog } from "@fortawesome/free-solid-svg-icons";
+import { motion, AnimatePresence } from "framer-motion";
 import type { User } from "@/store/useAuthStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/utils/utils";
 
 type Props = {
@@ -21,8 +23,37 @@ const MOCK_SEARCH_DATA = [
 const Navbar = ({ role, user }: Props) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const logout = useAuthStore((state) => state.logout);
   const [searchQuery, setSearchQuery] = useState("");
   const [showResults, setShowResults] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setIsProfileMenuOpen(false);
+      }
+    };
+
+    if (isProfileMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isProfileMenuOpen]);
+
+  const handleLogout = () => {
+    logout();
+    navigate("/auth");
+    setIsProfileMenuOpen(false);
+  };
+
+  const handleNavigateTo = (path: string) => {
+    navigate(path);
+    setIsProfileMenuOpen(false);
+  };
 
   const filteredResults = MOCK_SEARCH_DATA.filter(p => 
     searchQuery && (p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.category.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -120,23 +151,62 @@ const Navbar = ({ role, user }: Props) => {
           <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-destructive rounded-full" />
         </button>
 
-        {/* User Profile */}
-        <button 
-          onClick={() => navigate(role === "ADMIN" ? "/dashboard/admin/settings" : "/dashboard/company/profile")}
-          className="flex items-center gap-3 px-3 py-1.5 rounded-lg bg-muted/30 border border-transparent transition-all cursor-pointer hover:bg-muted/50 text-left hover:border-border/50"
-        >
-          <div className="text-right hidden sm:block">
-            <p className="text-[11px] font-normal text-foreground leading-tight">
-              {user?.companyName || user?.name}
-            </p>
-            <p className="text-[9px] text-muted-foreground font-normal uppercase tracking-tighter opacity-60">
-              {user?.email}
-            </p>
-          </div>
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary/60 border border-primary/10">
-             <FontAwesomeIcon icon={faUserCircle} size="lg" />
-          </div>
-        </button>
+        {/* User Profile Dropdown */}
+        <div className="relative" ref={profileMenuRef}>
+          <button
+            onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+            className="flex items-center gap-3 px-3 py-1.5 rounded-lg bg-muted/30 border border-transparent transition-all cursor-pointer hover:bg-muted/50 text-left hover:border-border/50"
+          >
+            <div className="text-right hidden sm:block">
+              <p className="text-[11px] font-normal text-foreground leading-tight">
+                {role === "ADMIN" ? (user?.name || "System Administrator") : (user?.companyName || user?.name)}
+              </p>
+              <p className="text-[9px] text-muted-foreground font-normal uppercase tracking-tighter opacity-60">
+                {user?.email}
+              </p>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary/60 border border-primary/10">
+              <FontAwesomeIcon icon={faUserCircle} size="lg" />
+            </div>
+          </button>
+
+          <AnimatePresence>
+            {isProfileMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                transition={{ duration: 0.15 }}
+                className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-xl shadow-lg z-50"
+              >
+                <div className="py-1">
+                  <button
+                    onClick={() => handleNavigateTo(role === "ADMIN" ? "/dashboard/admin/profile" : "/dashboard/company/profile")}
+                    className="w-full px-4 py-2 text-sm text-foreground hover:bg-muted/50 flex items-center gap-3 transition-colors text-left"
+                  >
+                    <FontAwesomeIcon icon={faUserCircle} className="w-4 h-4" />
+                    Profile
+                  </button>
+                  <button
+                    onClick={() => handleNavigateTo(role === "ADMIN" ? "/dashboard/admin/settings" : "/dashboard/company/settings")}
+                    className="w-full px-4 py-2 text-sm text-foreground hover:bg-muted/50 flex items-center gap-3 transition-colors text-left"
+                  >
+                    <FontAwesomeIcon icon={faCog} className="w-4 h-4" />
+                    Settings
+                  </button>
+                  <div className="border-t border-border/30 my-1" />
+                  <button
+                    onClick={handleLogout}
+                    className="w-full px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 flex items-center gap-3 transition-colors text-left"
+                  >
+                    <FontAwesomeIcon icon={faSignOutAlt} className="w-4 h-4" />
+                    Logout
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     </header>
   );

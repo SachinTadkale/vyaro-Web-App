@@ -15,6 +15,7 @@ import {
   CalendarDays,
   ShieldCheck,
   MessageSquare,
+  CheckCircle,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -72,8 +73,8 @@ interface FormattedListing {
   description: string;
 }
 
-// ── PlaceOrderModal ─────────────────────────────────────────────────
-const PlaceOrderModal = ({
+// ── BookOrderModal ─────────────────────────────────────────────────
+const BookOrderModal = ({
   isOpen,
   onClose,
   listing,
@@ -84,7 +85,7 @@ const PlaceOrderModal = ({
   listing: FormattedListing;
   onSubmit: (data: { qty: number; notes: string; total: number }) => void;
 }) => {
-  const [qty, setQty] = useState("");
+  const [qty, setQty] = useState("1");
   const [notes, setNotes] = useState("");
 
   if (!isOpen || !listing) return null;
@@ -98,51 +99,90 @@ const PlaceOrderModal = ({
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="bg-card border border-border rounded-2xl p-6 w-full max-w-md shadow-2xl"
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+        className="bg-card border border-border rounded-3xl p-7 w-full max-w-md shadow-2xl relative overflow-hidden"
       >
-        <h3 className="text-lg font-black text-foreground mb-1">Place Order</h3>
-        <p className="text-xs text-muted-foreground mb-5">
-          Procuring <span className="font-bold text-foreground">{listing.produce}</span> from {listing.farmer}
-        </p>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold mb-1.5 text-muted-foreground uppercase tracking-widest">
-              Quantity ({listing.unit})
-            </label>
-            <input
-              type="number"
-              min="1"
-              className="w-full rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background border border-border text-foreground placeholder:text-muted-foreground/50"
-              value={qty}
-              onChange={(e) => setQty(e.target.value)}
-              placeholder="e.g. 100"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold mb-1.5 text-muted-foreground uppercase tracking-widest">
-              Notes (Optional)
-            </label>
-            <textarea
-              rows={3}
-              className="w-full rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background border border-border text-foreground placeholder:text-muted-foreground/50 resize-none"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Any special instructions..."
-            />
-          </div>
-          <div className="flex items-center justify-between bg-muted/30 p-3 rounded-xl border border-border/50">
-            <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Total Price:</span>
-            <span className="text-lg font-black text-primary">₹{totalPrice.toLocaleString('en-IN')}</span>
-          </div>
+        <div className="absolute top-0 inset-x-0 h-1.5 bg-primary rounded-t-3xl" />
+        
+        <div className="mb-6">
+          <h3 className="text-xl font-black text-foreground mb-1 tracking-tight">Book Order</h3>
+          <p className="text-xs text-muted-foreground">Submit a procurement request to the farmer.</p>
         </div>
 
-        <div className="flex gap-2.5 mt-6">
+        <div className="space-y-6">
+          {/* Product & Seller Details */}
+          <div className="bg-muted/30 border border-border/50 rounded-2xl p-4">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Product</span>
+              <span className="text-sm font-black text-foreground">{listing.produce}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Seller</span>
+              <span className="text-sm font-bold text-foreground/80">{listing.farmer}</span>
+            </div>
+          </div>
+
+          {/* Inputs Section */}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-[10px] font-bold mb-1.5 text-muted-foreground uppercase tracking-widest">
+                Quantity <span className="text-foreground/50 lowercase font-medium">({listing.unit})</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min="0"
+                  className="w-full rounded-xl py-3 pl-4 pr-16 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/50 bg-background border border-border text-foreground transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  value={qty}
+                  onChange={(e) => setQty(e.target.value)}
+                  placeholder="e.g. 100"
+                />
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground pointer-events-none select-none">
+                  {listing.unit}
+                </div>
+              </div>
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold mb-1.5 text-muted-foreground uppercase tracking-widest">
+                Notes <span className="text-foreground/50 lowercase font-medium">(optional)</span>
+              </label>
+              <textarea
+                rows={2}
+                className="w-full rounded-xl py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 bg-background border border-border text-foreground transition-all resize-none placeholder:text-muted-foreground/40"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Any special instructions for the farmer..."
+              />
+            </div>
+          </div>
+
+          {/* Price Breakdown */}
+          <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-semibold text-muted-foreground">Price per {listing.unit}</span>
+              <span className="text-xs font-bold text-foreground">₹{listing.priceValue.toLocaleString('en-IN')}</span>
+            </div>
+            <div className="flex justify-between items-center border-b border-primary/10 pb-3">
+              <span className="text-xs font-semibold text-muted-foreground">Total Quantity</span>
+              <span className="text-xs font-bold text-foreground">{numericQty > 0 ? `${numericQty} ${listing.unit}` : "0"}</span>
+            </div>
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-[11px] font-black text-primary uppercase tracking-widest">Total Value</span>
+              <span className="text-xl font-black text-primary">₹{totalPrice.toLocaleString('en-IN')}</span>
+            </div>
+          </div>
+          
+          <p className="text-[11px] text-center text-muted-foreground/80 font-medium">
+            You can complete payment securely <span className="text-foreground">after</span> seller confirmation.
+          </p>
+        </div>
+
+        <div className="flex gap-3 mt-7">
           <button
             onClick={onClose}
-            className="flex-1 rounded-xl py-2.5 text-sm font-semibold border border-border text-muted-foreground hover:bg-muted transition-colors"
+            className="flex-1 rounded-xl py-3 text-sm font-bold border border-border/60 text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-all"
           >
             Cancel
           </button>
@@ -150,16 +190,16 @@ const PlaceOrderModal = ({
             onClick={() => {
               if (numericQty > 0) {
                 onSubmit({ qty: numericQty, notes, total: totalPrice });
-                setQty("");
+                setQty("1");
                 setNotes("");
                 onClose();
               } else {
                 toast.error("Please enter a valid quantity.");
               }
             }}
-            className="flex-1 bg-primary text-primary-foreground font-bold rounded-xl py-2.5 text-sm hover:bg-primary/90 transition-colors"
+            className="flex-[1.5] bg-primary text-primary-foreground font-black rounded-xl py-3 text-sm hover:bg-primary/90 active:scale-[0.98] transition-all shadow-md shadow-primary/20"
           >
-            Confirm Order
+            Confirm Booking
           </button>
         </div>
       </motion.div>
@@ -167,11 +207,172 @@ const PlaceOrderModal = ({
   );
 };
 
-// ── Product Detail Page ─────────────────────────────────────────────
+// ── PayModal ──────────────────────────────────────────────────
+const PAY_METHODS = ["UPI", "Credit / Debit Card", "Net Banking", "Bank Transfer"] as const;
+const PayModal = ({
+  isOpen,
+  onClose,
+  listing,
+  onSuccess,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  listing: FormattedListing;
+  onSuccess: () => void;
+}) => {
+  const [step, setStep] = useState<"form" | "loading" | "done">("form");
+  const [qty, setQty] = useState("1");
+  const [method, setMethod] = useState<string>("UPI");
+
+  if (!isOpen || !listing) return null;
+
+  const numericQty = parseFloat(qty) || 0;
+  const totalPrice = numericQty * listing.priceValue;
+
+  const handlePay = () => {
+    if (numericQty <= 0) {
+      toast.error("Enter a valid quantity.");
+      return;
+    }
+    setStep("loading");
+    setTimeout(() => {
+      setStep("done");
+      toast.success("Payment successful!");
+    }, 1500);
+  };
+
+  const handleClose = () => {
+    onClose();
+    setTimeout(() => {
+      setStep("form");
+      setQty("1");
+      setMethod("UPI");
+    }, 200);
+  };
+
+  const handleDone = () => {
+    handleClose();
+    onSuccess();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 px-4" onClick={(e) => e.target === e.currentTarget && handleClose()}>
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-card border border-border rounded-3xl p-7 w-full max-w-sm shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 inset-x-0 h-1.5 bg-primary rounded-t-3xl" />
+        
+        {step === "loading" ? (
+          <div className="flex flex-col items-center justify-center py-10 space-y-4">
+             <div className="w-12 h-12 rounded-full border-4 border-primary border-t-transparent animate-spin mx-auto" />
+             <p className="text-sm font-bold text-foreground">Processing Payment...</p>
+             <p className="text-xs text-muted-foreground">Please don't close this window.</p>
+          </div>
+        ) : step === "done" ? (
+          <>
+            <div className="flex flex-col items-center gap-3 py-6">
+              <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center border border-green-500/20 mb-2">
+                <CheckCircle size={32} className="text-green-500" />
+              </div>
+              <h3 className="text-xl font-black text-foreground">Payment Successful!</h3>
+              <p className="text-xs text-muted-foreground text-center leading-relaxed">
+                Your order for <span className="font-bold text-primary">{numericQty} {listing.unit}</span> of <span className="font-bold text-foreground">{listing.produce}</span> has been processed via <span className="font-bold text-foreground">{method}</span>.
+              </p>
+            </div>
+            <button onClick={handleDone} className="w-full bg-green-500 text-white font-black rounded-xl py-3 text-sm hover:bg-green-600 transition-colors shadow-sm">
+              Done
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="mb-6">
+              <h3 className="text-xl font-black text-foreground mb-1 tracking-tight">Pay Now</h3>
+              <p className="text-xs text-muted-foreground">Complete your procurement in one step.</p>
+            </div>
+
+            {/* Product Summary */}
+            <div className="bg-muted/30 border border-border/50 rounded-2xl p-4 mb-5 flex justify-between items-center">
+               <div className="flex flex-col">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Product</span>
+                  <span className="text-sm font-black text-foreground">{listing.produce}</span>
+               </div>
+               <div className="text-right flex flex-col">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Base Price</span>
+                  <span className="text-sm font-bold text-primary">₹{listing.priceValue.toLocaleString('en-IN')}/{listing.unit}</span>
+               </div>
+            </div>
+
+            <div className="space-y-5 mb-7">
+              {/* Quantity Input */}
+              <div>
+                <label className="block text-[10px] font-bold mb-1.5 text-muted-foreground uppercase tracking-widest">
+                  Quantity <span className="text-foreground/50 lowercase font-medium">({listing.unit})</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    className="w-full rounded-xl py-3 pl-4 pr-16 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/50 bg-background border border-border text-foreground transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    value={qty}
+                    onChange={(e) => setQty(e.target.value)}
+                  />
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground pointer-events-none select-none">
+                    {listing.unit}
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment Method Selection */}
+              <div>
+                <label className="block text-[10px] font-bold mb-1.5 text-muted-foreground uppercase tracking-widest">
+                  Payment Method
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                   {PAY_METHODS.map(m => (
+                     <button
+                       key={m}
+                       onClick={() => setMethod(m)}
+                       className={`px-3 py-2.5 rounded-xl border text-[11px] font-bold transition-all text-center ${
+                         method === m
+                           ? "border-primary bg-primary/10 text-primary shadow-sm"
+                           : "border-border bg-muted/10 text-muted-foreground hover:bg-muted/30 hover:text-foreground"
+                       }`}
+                     >
+                       {m}
+                     </button>
+                   ))}
+                </div>
+              </div>
+
+              {/* Price Breakdown */}
+              <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 flex justify-between items-center">
+                 <span className="text-[11px] font-black text-primary uppercase tracking-widest">Total Pay</span>
+                 <span className="text-xl font-black text-primary">₹{totalPrice.toLocaleString('en-IN')}</span>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button onClick={handleClose} className="flex-1 rounded-xl py-3 text-sm font-bold border border-border/60 text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-all">
+                Cancel
+              </button>
+              <button 
+                 onClick={handlePay} 
+                 className="flex-[1.5] bg-primary text-primary-foreground font-black rounded-xl py-3 text-sm hover:bg-primary/90 active:scale-[0.98] transition-all shadow-md shadow-primary/20 flex items-center justify-center gap-2"
+              >
+                <span>Pay</span>
+                <span>₹{totalPrice.toLocaleString('en-IN')}</span>
+              </button>
+            </div>
+          </>
+        )}
+      </motion.div>
+    </div>
+  );
+};
+
 const MarketplaceProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [isBookModalOpen, setIsBookModalOpen] = useState(false);
+  const [isPayModalOpen, setIsPayModalOpen] = useState(false);
   const [localOrders, setLocalOrders] = useState<{id: number; qty: number; notes: string; total: number}[]>([]);
 
   // to clear lints
@@ -397,26 +598,33 @@ const MarketplaceProductDetail = () => {
             </h2>
 
             <button
-              id="place-order-btn"
-              onClick={() => setIsOrderModalOpen(true)}
-              className="w-full flex items-center justify-center gap-2.5 bg-primary text-primary-foreground font-bold rounded-xl py-3 text-sm hover:bg-primary/90 active:scale-[0.98] transition-all shadow-sm"
+              onClick={() => setIsBookModalOpen(true)}
+              className="w-full flex items-center justify-center gap-2.5 bg-primary/10 text-primary border border-primary/20 font-bold rounded-xl py-3 text-sm hover:bg-primary hover:text-primary-foreground active:scale-[0.98] transition-all shadow-sm"
             >
               <ShoppingCart size={16} />
-              Place Order
+              Book Order
             </button>
 
             <button
-              id="contact-farmer-btn"
+              onClick={() => setIsPayModalOpen(true)}
+              className="w-full flex items-center justify-center gap-2.5 bg-green-500 text-white font-bold rounded-xl py-3 text-sm hover:bg-green-600 active:scale-[0.98] transition-all shadow-sm"
+            >
+              <CircleDollarSign size={16} />
+              Pay Now
+            </button>
+
+            <button
               onClick={() =>
                 navigate("/messages", {
                   state: {
                     farmerName: listing.farmer,
                     product: listing.produce,
                     listingId: listing.id,
+                    location: listing.location,
                   },
                 })
               }
-              className="w-full flex items-center justify-center gap-2.5 bg-muted border border-border text-foreground font-bold rounded-xl py-3 text-sm hover:bg-muted/80 active:scale-[0.98] transition-all"
+              className="w-full flex items-center justify-center gap-2.5 bg-muted text-foreground font-bold rounded-xl py-3 text-sm hover:bg-muted/80 active:scale-[0.98] transition-all"
             >
               <MessageSquare size={16} />
               Contact Farmer
@@ -446,13 +654,35 @@ const MarketplaceProductDetail = () => {
         </div>
       </div>
 
-      <PlaceOrderModal
-        isOpen={isOrderModalOpen}
-        onClose={() => setIsOrderModalOpen(false)}
+      <BookOrderModal
+        isOpen={isBookModalOpen}
+        onClose={() => setIsBookModalOpen(false)}
         listing={listing}
         onSubmit={(orderData) => {
+          const newOrderId = `ORD-${Math.floor(Math.random() * 10000)}`;
           setLocalOrders((prev) => [...prev, { id: Date.now(), ...orderData }]);
-          toast.success("Order placed successfully!");
+          toast.success("Order booked successfully!");
+          setTimeout(() => {
+            navigate("/dashboard/company/order-success", {
+              state: {
+                orderId: newOrderId,
+                productName: listing.produce,
+                qty: `${orderData.qty} ${listing.unit}`,
+                totalPrice: orderData.total.toLocaleString('en-IN')
+              }
+            });
+          }, 800);
+        }}
+      />
+
+      <PayModal
+        isOpen={isPayModalOpen}
+        onClose={() => setIsPayModalOpen(false)}
+        listing={listing}
+        onSuccess={() => {
+          setTimeout(() => {
+            navigate("/dashboard/company", { state: { tab: "overview" } }); // Just navigating somewhere to simulate completed flow
+          }, 600);
         }}
       />
     </motion.div>

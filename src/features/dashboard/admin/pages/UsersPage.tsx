@@ -183,6 +183,18 @@ const UsersPage = () => {
     console.log(`Blocked ${selectedFarmer.name} for: ${reason}`);
   };
 
+  const handleFlag = () => {
+    if (!selectedFarmer) return;
+    console.log(`Flagged ${selectedFarmer.name} for suspicious activity`);
+  };
+
+  const handleRemove = () => {
+    if (!selectedFarmer) return;
+    console.log(`Removed ${selectedFarmer.name} from inspection view`);
+    setSelectedFarmer(null);
+    setDrawerOpen(false);
+  };
+
   return (
     <div className="space-y-6 pb-12">
       {/* 🚀 Top Section: Header & Stats */}
@@ -254,8 +266,8 @@ const UsersPage = () => {
         farmer={selectedFarmer}
         onVerify={handleVerify}
         onBlock={initiateBlock}
-        onFlag={() => {}}
-        onRemove={() => {}}
+        onFlag={handleFlag}
+        onRemove={handleRemove}
       />
 
       {/* 🚫 Block Modal */}

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Search, ShoppingBag, ChevronRight } from "lucide-react";
 import {
@@ -37,8 +37,33 @@ const getStatusBadge = (status: string) => {
 const OrdersPage = () => {
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
+  const highlightOrderId = (location.state as { highlightOrderId?: string })?.highlightOrderId;
+  const highlightRef = useRef<HTMLTableRowElement>(null);
 
-  const filteredOrders = MOCK_ORDERS.filter((o) =>
+  useEffect(() => {
+    if (highlightOrderId && highlightRef.current) {
+      highlightRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [highlightOrderId]);
+
+  // For demonstration, let's inject a mock order if it matches highlightOrderId but isn't in MOCK_ORDERS yet.
+  // In a real app with backend, this would naturally be fetched. Let's just visually highlight if it exists.
+  let displayOrders = [...MOCK_ORDERS];
+  if (highlightOrderId && !MOCK_ORDERS.some(o => o.id === highlightOrderId)) {
+    const mockFromState = {
+      id: highlightOrderId,
+      product: "Newly Booked Produce",
+      farmer: "Local Farmer",
+      quantity: "N/A",
+      totalPrice: "-",
+      status: "Pending",
+      paymentStatus: "Unpaid"
+    };
+    displayOrders = [mockFromState, ...displayOrders];
+  }
+
+  const filteredOrders = displayOrders.filter((o) =>
     o.id.toLowerCase().includes(search.toLowerCase()) ||
     o.product.toLowerCase().includes(search.toLowerCase()) ||
     o.farmer.toLowerCase().includes(search.toLowerCase())
@@ -84,10 +109,20 @@ const OrdersPage = () => {
                   <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">No orders found.</TableCell>
                 </TableRow>
               ) : (
-                filteredOrders.map((order) => (
-                  <TableRow key={order.id} onClick={() => navigate(`/dashboard/company/orders/${order.id}`)} className="group hover:bg-muted/50 transition-colors cursor-pointer">
+                filteredOrders.map((order) => {
+                  const isHighlighted = order.id === highlightOrderId;
+                  return (
+                  <TableRow 
+                    key={order.id} 
+                    ref={isHighlighted ? highlightRef : null}
+                    onClick={() => navigate(`/dashboard/company/orders/${order.id}`)} 
+                    className={`group transition-colors cursor-pointer ${isHighlighted ? 'bg-green-500/10 border-l-4 border-l-green-500 hover:bg-green-500/20' : 'hover:bg-muted/50'}`}
+                  >
                     <TableCell className="py-4 px-4 text-left font-bold text-foreground">
-                      {order.id}
+                      <div className="flex items-center gap-2">
+                         {order.id}
+                         {isHighlighted && <span className="bg-green-500 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded shadow-sm tracking-wider">New</span>}
+                      </div>
                     </TableCell>
                     <TableCell className="py-4 px-4 text-left">
                       <div className="flex items-center gap-3">
@@ -126,7 +161,8 @@ const OrdersPage = () => {
                       </button>
                     </TableCell>
                   </TableRow>
-                ))
+                  );
+                })
               )}
             </TableBody>
           </Table>

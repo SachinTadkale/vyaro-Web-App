@@ -12,8 +12,8 @@ const KycDocumentPreview = ({ label, src, onClick }: Props) => {
     <div className="flex flex-col gap-2">
       <label className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-widest">{label}</label>
       <div 
-        onClick={onClick}
-        className="group relative aspect-[3/2] rounded-xl bg-muted/20 border border-border/20 overflow-hidden cursor-pointer hover:border-primary/40 transition-all duration-300"
+        onClick={src ? onClick : undefined}
+        className={`group relative aspect-[3/2] rounded-xl bg-muted/20 border border-border/20 overflow-hidden ${src ? 'cursor-pointer hover:border-primary/40' : 'cursor-not-allowed opacity-70'} transition-all duration-300`}
       >
         {/* Placeholder/Thumbnail */}
         <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-black/20 transition-colors">
@@ -31,11 +31,17 @@ const KycDocumentPreview = ({ label, src, onClick }: Props) => {
         )}
 
         {/* Hover Overlay */}
-        <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-           <div className="w-10 h-10 rounded-full bg-primary/20 backdrop-blur-md flex items-center justify-center border border-primary/20 scale-50 group-hover:scale-100 transition-transform">
-              <FontAwesomeIcon icon={faSearchPlus} className="text-primary text-sm" />
-           </div>
-        </div>
+        {src ? (
+          <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+             <div className="w-10 h-10 rounded-full bg-primary/20 backdrop-blur-md flex items-center justify-center border border-primary/20 scale-50 group-hover:scale-100 transition-transform">
+                <FontAwesomeIcon icon={faSearchPlus} className="text-primary text-sm" />
+             </div>
+          </div>
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+             <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest bg-black/60 px-3 py-1.5 rounded-md backdrop-blur-sm">Not Available</span>
+          </div>
+        )}
 
         {/* Bottom Label (Minimal) */}
         <div className="absolute bottom-3 left-3">

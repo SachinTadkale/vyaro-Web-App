@@ -17,6 +17,8 @@ import {
   faCog,
   faCreditCard,
   faMessage,
+  faScaleBalanced,
+  faHistory,
 } from "@fortawesome/free-solid-svg-icons";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -40,6 +42,12 @@ const Sidebar = ({ role }: Props) => {
     { name: "KYC Requests", path: "/dashboard/admin/kyc", icon: faFileCircleCheck },
     { name: "Farmers", path: "/dashboard/admin/users", icon: faUsers },
     { name: "Companies", path: "/dashboard/admin/companies", icon: faBuilding },
+    { name: "Orders", path: "/dashboard/admin/orders", icon: faReceipt },
+    { name: "Listings", path: "/dashboard/admin/listings", icon: faStore },
+    { name: "Transactions", path: "/dashboard/admin/transactions", icon: faCreditCard },
+    { name: "Notifications", path: "/dashboard/admin/notifications", icon: faBell },
+    { name: "Disputes", path: "/dashboard/admin/disputes", icon: faScaleBalanced },
+    { name: "Audit Logs", path: "/dashboard/admin/logs", icon: faHistory },
     { name: "Leads", path: "/dashboard/admin/leads", icon: faSeedling },
   ];
 
@@ -83,7 +91,7 @@ const Sidebar = ({ role }: Props) => {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
         <p className="text-[10px] text-muted-foreground px-3 mb-2 font-bold uppercase tracking-widest">
           Main Menu
         </p>

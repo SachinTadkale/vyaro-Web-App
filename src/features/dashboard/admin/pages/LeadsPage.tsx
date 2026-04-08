@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { Lead } from "../types/lead.types";
 import { getLeads, deleteLead } from "@/services/leads.api";
 import { toast } from "sonner";
+import LeadsTable from "../components/LeadsTable";
 
 const LeadsPage = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -61,72 +62,11 @@ const LeadsPage = () => {
         </div>
       </div>
 
-      {/* LOADING */}
-      {loading && (
-        <div className="text-muted-foreground text-center py-10">Loading leads...</div>
-      )}
-
-      {/* EMPTY */}
-      {!loading && filteredLeads.length === 0 && (
-        <div className="text-muted-foreground text-center py-10">No leads found</div>
-      )}
-
-      {/* TABLE */}
-      {!loading && filteredLeads.length > 0 && (
-        <div className="rounded-2xl border border-border overflow-hidden bg-card">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-muted-foreground text-xs">
-              <tr>
-                <th className="px-5 py-3 text-left">Name</th>
-                <th className="px-5 py-3 text-left">Email</th>
-                <th className="px-5 py-3 text-left">Role</th>
-                <th className="px-5 py-3 text-left">Created</th>
-                <th className="px-5 py-3 text-left">Action</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {filteredLeads.map((l) => (
-                <tr
-                  key={l.id}
-                  className="border-t border-border hover:bg-muted/20 transition-colors"
-                >
-                  <td className="px-5 py-4 text-foreground font-bold">
-                    {l.name || "-"}
-                  </td>
-
-                  <td className="px-5 py-4 text-muted-foreground">{l.email}</td>
-
-                  <td className="px-5 py-4">
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${
-                        l.role === "FARMER"
-                          ? "bg-green-500/20 text-green-400"
-                          : "bg-blue-500/20 text-blue-400"
-                      }`}
-                    >
-                      {l.role}
-                    </span>
-                  </td>
-
-                  <td className="px-5 py-4 text-xs text-muted-foreground">
-                    {new Date(l.createdAt).toLocaleDateString()}
-                  </td>
-
-                  <td className="px-5 py-4">
-                    <button
-                      onClick={() => handleDelete(l.id)}
-                      className="text-red-400 text-xs font-bold"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <LeadsTable
+        leads={filteredLeads}
+        isLoading={loading}
+        onDelete={handleDelete}
+      />
     </div>
   );
 };
