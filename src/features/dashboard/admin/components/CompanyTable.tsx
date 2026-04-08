@@ -1,10 +1,15 @@
+import { useState } from "react";
 import { Eye, MapPin, Calendar, FileText } from "lucide-react";
 import type { Company } from "../types/admin.types";
+import TablePagination from "@/components/common/TablePagination";
+import TableEmptyState from "@/components/common/TableEmptyState";
+import TableSkeleton from "@/components/common/TableSkeleton";
 import { cn } from "@/utils/utils";
 
 interface CompanyTableProps {
   companies: Company[];
   onView: (company: Company) => void;
+  isLoading?: boolean;
 }
 
 const StatusBadge = ({ status }: { status: string }) => {
@@ -39,13 +44,21 @@ const VerificationBadge = ({ status }: { status: string }) => {
   );
 };
 
-const CompanyTable = ({ companies, onView }: CompanyTableProps) => {
+const CompanyTable = ({ companies, onView, isLoading = false }: CompanyTableProps) => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  const totalPages = Math.ceil(companies.length / rowsPerPage);
+  const startIdx = (currentPage - 1) * rowsPerPage;
+  const endIdx = startIdx + rowsPerPage;
+  const displayedCompanies = companies.slice(startIdx, endIdx);
+
   return (
-    <div className="bg-card border border-border/50 rounded-xl overflow-hidden">
+    <div className="overflow-hidden rounded-2xl border border-border/40 bg-card/30 backdrop-blur-md">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-muted/30 border-b border-border/50">
+          <thead className="bg-muted/30">
+            <tr>
               <th className="px-5 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Company</th>
               <th className="px-5 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">GST Number</th>
               <th className="px-5 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Location</th>
@@ -56,8 +69,8 @@ const CompanyTable = ({ companies, onView }: CompanyTableProps) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-border/20">
-            {companies.map((company) => (
-              <tr key={company.id} className="hover:bg-muted/10 transition-colors group">
+            {displayedCompanies.map((company) => (
+              <tr key={company.id} className="hover:bg-muted/20 transition-colors group cursor-pointer">
                 <td className="px-5 py-3">
                   <div className="flex flex-col">
                     <span className="text-xs font-bold text-foreground tracking-tight group-hover:text-primary transition-colors">
@@ -114,8 +127,26 @@ const CompanyTable = ({ companies, onView }: CompanyTableProps) => {
           </tbody>
         </table>
       </div>
+      {isLoading && <TableSkeleton rows={5} columns={7} />}
+      {!isLoading && companies.length === 0 && (
+        <TableEmptyState description="No companies found. Check your filters." />
+      )}
+      {!isLoading && companies.length > 0 && (
+        <TablePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={(rows) => {
+            setRowsPerPage(rows);
+            setCurrentPage(1);
+          }}
+          totalItems={companies.length}
+        />
+      )}
     </div>
   );
 };
+
 
 export default CompanyTable;
