@@ -30,7 +30,7 @@ const MOCK_CHATS = [
 
 const MessagesPage = () => {
   const location = useLocation();
-  const incomingState = location.state as { farmerName?: string; product?: string; listingId?: string } | null;
+  const incomingState = location.state as { farmerName?: string; product?: string; listingId?: string; location?: string } | null;
 
   const [chats, setChats] = useState(MOCK_CHATS);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
@@ -56,7 +56,7 @@ const MessagesPage = () => {
     const newChat = {
       id: newId,
       name: farmerName,
-      location: "Unknown Location",
+      location: incomingState.location || "Unknown Location",
       product: product,
       orderId: "" as string | null,
       lastMessage: "Start a conversation...",
